@@ -1,6 +1,6 @@
 <?php
 // Asegurarnos de que conexion.php existe antes de incluirlo
-if (!file_exists('conexion.php')) {
+if (!file_exists('Conexion.php')) {
     die(json_encode(["status" => "error", "message" => "Falta conexion.php"]));
 }
 require_once 'conexion.php';
