@@ -8,6 +8,7 @@ require_once 'Conexion.php';
 class Negocio {
     private $conn;
     private $db;
+    
 
     public function __construct() {
         $this->db = new Conexion();
