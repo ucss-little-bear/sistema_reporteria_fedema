@@ -3,7 +3,7 @@
 if (!file_exists('Conexion.php')) {
     die(json_encode(["status" => "error", "message" => "Falta conexion.php"]));
 }
-require_once 'conexion.php';
+require_once 'Conexion.php';
 
 class Negocio {
     private $conn;
