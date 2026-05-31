@@ -109756,7 +109756,7 @@ l=A.b1y(r,r,new A.ex(4,n,new A.aS(B.bE,1,B.V,-1)),r,r,B.Wz,r,r,r,new A.ex(4,m,ne
 m=A.dv(r,r,B.V_,r,r,r,0,r,r,B.G,r,r,B.WH,r,new A.aX(A.am(6),B.H),r,r,r,B.aXG,r)
 n=A.aXl(r,r,r,r,r,r,r,r,r,B.kV,r,r,B.xg,r,new A.aX(A.am(6),B.H),new A.aS(B.bE,1,B.V,-1),r,r,B.aYF,r)
 s=A.c7(r,r,B.aX,r,r,r,r,r,r,r,r,16,r,r,B.a7,r,r,!0,r,r,r,r,r,r,r,r)
-return A.bfb(new A.Hf(B.t1,"Sistema Acad\xe9mico ERP",A.Bf(r,new A.tD(r,B.G,r,r,0,B.Wi,new A.aX(o,new A.aS(B.c3,1,B.V,-1))),p,new A.yI(m),"Inter",new A.eb(r,r,r,r,r,B.aX,r,r,r),l,new A.zT(n),B.kV,B.kX,A.aA4(r,A.c7(r,r,B.cP,r,r,r,r,r,r,r,r,r,r,r,r,r,r,!0,r,r,r,r,r,r,r,r),r,r,r,r,r,r,B.aYE,r,r,r,r,s,r),!0),!1,r),q)}}
+return A.bfb(new A.Hf(B.t1,"Sistema Reporter\xeda FEDEMA",A.Bf(r,new A.tD(r,B.G,r,r,0,B.Wi,new A.aX(o,new A.aS(B.c3,1,B.V,-1))),p,new A.yI(m),"Inter",new A.eb(r,r,r,r,r,B.aX,r,r,r),l,new A.zT(n),B.kV,B.kX,A.aA4(r,A.c7(r,r,B.cP,r,r,r,r,r,r,r,r,r,r,r,r,r,r,!0,r,r,r,r,r,r,r,r),r,r,r,r,r,r,B.aYE,r,r,r,r,s,r),!0),!1,r),q)}}
 A.aqf.prototype={
 $1(a){return new A.tv(new A.ae1(),$.ai())},
 $S:658}

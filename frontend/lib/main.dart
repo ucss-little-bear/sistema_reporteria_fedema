@@ -24,7 +24,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => UsuarioProvider()),
       ],
       child: MaterialApp(
-        title: 'Sistema Académico ERP',
+        title: 'Sistema Reportería FEDEMA',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
 
