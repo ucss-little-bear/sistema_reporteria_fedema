@@ -5,7 +5,7 @@ import '../Entities/api_response_entity.dart';
 import 'api_config.dart';
 
 class AuthService {
-  // Función para iniciar sesión (CU-14)
+
   Future<ApiResponse<Usuario>> login(String usuario, String password) async {
     try {
       final body = jsonEncode({
@@ -23,7 +23,7 @@ class AuthService {
       if (response.statusCode == 200) {
         final jsonMap = jsonDecode(response.body);
 
-        // Mapear la respuesta usando el factory de Usuario
+
         return ApiResponse<Usuario>.fromJson(
           jsonMap,
           (data) => Usuario.fromJson(data as Map<String, dynamic>),

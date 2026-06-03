@@ -5,18 +5,18 @@ import '../Entities/api_response_entity.dart';
 import 'api_config.dart';
 
 class UsuarioService {
-  // Listar todos los usuarios
+
   Future<ApiResponse<List<Usuario>>> listarUsuarios() async {
     try {
       final response = await http.post(
         Uri.parse(ApiConfig.baseUrl),
         headers: ApiConfig
-            .headers, // Asegúrate que sea {"Content-Type": "application/json"}
+            .headers,
         body: jsonEncode({"accion": "listar_usuarios"}),
       );
 
       if (response.statusCode == 200) {
-        // Verificamos si el cuerpo está vacío
+
         if (response.body.isEmpty) {
           return ApiResponse(
             status: "error",
@@ -67,7 +67,7 @@ class UsuarioService {
     }
   }
 
-  // Crear usuario
+
   Future<ApiResponse<bool>> crearUsuario(Map<String, dynamic> datos) async {
     try {
       datos['accion'] = 'crear_usuario';
@@ -114,7 +114,7 @@ class UsuarioService {
     }
   }
 
-  // Cambiar estado (Activar/Desactivar)
+
   Future<ApiResponse<bool>> cambiarEstado(
     int idUsuario,
     int nuevoEstado,

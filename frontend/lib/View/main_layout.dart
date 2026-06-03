@@ -193,16 +193,16 @@ class _MainLayoutState extends State<MainLayout> {
     return Scaffold(
       body: Row(
         children: [
-          // ------------------ SIDEBAR (ANIMADO) ------------------
+
           AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             width: _isSidebarExpanded ? 260 : 70,
             color: theme.primaryColor,
             child: Column(
               children: [
-                // Header del Sidebar
+
                 Padding(
-                  // Ajuste sutil: Menos padding arriba para que no se vea tan separado
+
                   padding: _isSidebarExpanded
                       ? const EdgeInsets.fromLTRB(24, 24, 16, 20)
                       : const EdgeInsets.symmetric(vertical: 24),
@@ -261,15 +261,15 @@ class _MainLayoutState extends State<MainLayout> {
                     onPressed: () => setState(() => _isSidebarExpanded = true),
                   ),
 
-                // Info Usuario (CORREGIDO: CENTRADO)
+
                 if (_isSidebarExpanded) ...[
                   Container(
                     width: double
-                        .infinity, // Ocupar todo el ancho para poder centrar
+                        .infinity,
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment
-                          .center, // <--- AQUÍ ESTABA EL PROBLEMA DE ALINEACIÓN
+                          .center,
                       children: [
                         Text(
                           "Hola, ${usuario.nombres.split(' ')[0]}",
@@ -278,7 +278,7 @@ class _MainLayoutState extends State<MainLayout> {
                             fontSize: 14,
                           ),
                         ),
-                        const SizedBox(height: 6), // Un poco más de aire
+                        const SizedBox(height: 6),
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 10,
@@ -287,11 +287,11 @@ class _MainLayoutState extends State<MainLayout> {
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(
                               0.1,
-                            ), // Fondo más sutil
+                            ),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: Colors.white12,
-                            ), // Borde fino
+                            ),
                           ),
                           child: Text(
                             usuario.rolDescripcion ?? "Usuario",
@@ -312,7 +312,7 @@ class _MainLayoutState extends State<MainLayout> {
                 const Divider(color: Colors.white10, height: 1),
                 const SizedBox(height: 8),
 
-                // Lista de Opciones
+
                 Expanded(
                   child: ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -385,11 +385,11 @@ class _MainLayoutState extends State<MainLayout> {
 
                 const Divider(color: Colors.white10, height: 1),
 
-                // Footer Sidebar (Logout)
+
                 Padding(
-                  // CORRECCIÓN OVERFLOW: Padding dinámico
-                  // Si está expandido (260px), usamos 16px.
-                  // Si está contraído (70px), usamos 8px para ganar espacio.
+
+
+
                   padding: EdgeInsets.all(_isSidebarExpanded ? 16 : 8),
                   child: _LogoutButton(
                     isExpanded: _isSidebarExpanded,
@@ -400,7 +400,7 @@ class _MainLayoutState extends State<MainLayout> {
             ),
           ),
 
-          // ------------------ CONTENIDO ------------------
+
           Expanded(
             child: Container(
               color: const Color(0xFFF5F6FA),
@@ -422,7 +422,7 @@ class _MainLayoutState extends State<MainLayout> {
   }
 }
 
-// Widget Botón de Logout
+
 class _LogoutButton extends StatefulWidget {
   final bool isExpanded;
   final VoidCallback onTap;
@@ -457,12 +457,12 @@ class _LogoutButtonState extends State<_LogoutButton> {
                 : null,
           ),
           child: Row(
-            // CORRECCIÓN OVERFLOW: Forzar centrado si no está expandido
+
             mainAxisAlignment: widget.isExpanded
                 ? MainAxisAlignment.start
                 : MainAxisAlignment.center,
             mainAxisSize: MainAxisSize
-                .min, // Ocupar solo lo necesario para evitar estiramientos raros
+                .min,
             children: [
               Icon(
                 Icons.logout,
@@ -472,7 +472,7 @@ class _LogoutButtonState extends State<_LogoutButton> {
               if (widget.isExpanded) ...[
                 const SizedBox(width: 12),
                 Flexible(
-                  // Flexible evita overflow de texto si la pantalla se hace muy pequeña
+
                   child: Text(
                     "Cerrar Sesión",
                     style: TextStyle(

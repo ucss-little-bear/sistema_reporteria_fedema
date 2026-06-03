@@ -80,7 +80,7 @@ class _ImportarArchivosViewState extends State<ImportarArchivosView> {
     }
   }
 
-  // --- Lógica: Procesar Asistencia ---
+
   Future<void> _procesarAsistenciaExcel(
     int idUsuario, {
     int? idDocenteForzado,
@@ -116,7 +116,7 @@ class _ImportarArchivosViewState extends State<ImportarArchivosView> {
       _mostrarModalSeleccionDocente(
         dataMap['docentes'],
         "${dataMap['grado']} - ${dataMap['seccion']} (${dataMap['anio']})",
-        // Callback para ASISTENCIA
+
         (idDocenteSeleccionado) {
           setState(() => _isUploading = true);
           _procesarAsistenciaExcel(
@@ -130,7 +130,7 @@ class _ImportarArchivosViewState extends State<ImportarArchivosView> {
     }
   }
 
-  // --- Lógica: Procesar Notas ---
+
   Future<void> _procesarNotas(
     int idUsuario, {
     int? idDocenteForzado,
@@ -139,7 +139,7 @@ class _ImportarArchivosViewState extends State<ImportarArchivosView> {
     final res = await _reporteService.enviarNotasExcel(
       _archivoSeleccionado!,
       idUsuario,
-      idDocente: idDocenteForzado, // AHORA SE ENVÍA EL DOCENTE
+      idDocente: idDocenteForzado,
       force: force,
     );
 
@@ -162,12 +162,12 @@ class _ImportarArchivosViewState extends State<ImportarArchivosView> {
         },
       );
     } else if (res.status == 'require_teacher_selection') {
-      // AHORA NOTAS TAMBIÉN MANEJA ESTE ESTADO
+
       final dataMap = res.data as Map<String, dynamic>;
       _mostrarModalSeleccionDocente(
         dataMap['docentes'],
         "${dataMap['grado']} - ${dataMap['seccion']} (${dataMap['anio']})",
-        // Callback para NOTAS
+
         (idDocenteSeleccionado) {
           setState(() => _isUploading = true);
           _procesarNotas(
@@ -181,7 +181,7 @@ class _ImportarArchivosViewState extends State<ImportarArchivosView> {
     }
   }
 
-  // --- Modales Genéricos ---
+
 
   void _mostrarAlertaDuplicado(
     String titulo,
@@ -230,7 +230,7 @@ class _ImportarArchivosViewState extends State<ImportarArchivosView> {
     );
   }
 
-  // MODAL GENÉRICO CON CALLBACK
+
   void _mostrarModalSeleccionDocente(
     List<dynamic> docentes,
     String salonInfo,
@@ -297,7 +297,7 @@ class _ImportarArchivosViewState extends State<ImportarArchivosView> {
                       ? null
                       : () {
                           Navigator.pop(ctx);
-                          // Ejecutar el callback específico (sea notas o asistencia)
+
                           onGuardar(docenteSeleccionado!);
                         },
                   icon: const Icon(Icons.save, size: 18),

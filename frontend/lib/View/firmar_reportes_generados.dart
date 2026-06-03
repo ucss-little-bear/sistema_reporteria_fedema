@@ -5,7 +5,7 @@ import 'package:frontend/Model/Entities/reporte_entity.dart';
 import 'package:frontend/Model/Services/pdf_generator_service.dart';
 import 'package:frontend/Model/Services/reporte_service.dart';
 import 'package:provider/provider.dart';
-import 'package:printing/printing.dart'; // Requerido para PdfPreview
+import 'package:printing/printing.dart';
 import 'package:intl/intl.dart';
 
 class FirmarReportesGeneradosView extends StatefulWidget {
@@ -24,7 +24,7 @@ class _FirmarReportesGeneradosViewState
 
   bool _isLoading = true;
 
-  // Listas de datos
+
   Map<String, List<Reporte>> _boletasAgrupadas = {};
   List<Reporte> _listaRendimiento = [];
   List<Reporte> _listaCertificados = [];
@@ -44,7 +44,7 @@ class _FirmarReportesGeneradosViewState
     super.dispose();
   }
 
-  // --- CARGA DE DATOS ---
+
   Future<void> _cargarReportes() async {
     setState(() => _isLoading = true);
     final usuario = Provider.of<AuthProvider>(
@@ -59,8 +59,8 @@ class _FirmarReportesGeneradosViewState
         usuario.idRol,
       );
       if (res.status == 'success' && res.data != null) {
-        // Filtramos solo los pendientes (ID 1 = Generado)
-        // Esta vista es para la Directora, que ve lo que está en estado 1
+
+
         final pendientes = res.data!
             .where((r) => r.idEstadoReporte == 1)
             .toList();
@@ -93,9 +93,9 @@ class _FirmarReportesGeneradosViewState
     }
   }
 
-  // --- LÓGICA PDF (VISUALIZADOR SEGURO) ---
+
   Future<void> _verPdf(Reporte r) async {
-    // Loader rápido
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -103,12 +103,12 @@ class _FirmarReportesGeneradosViewState
     );
 
     try {
-      // 1. Obtener datos reales ejecutando el SQL en backend
+
       final resData = await _service.obtenerDatosPdf(r.idReporte);
-      Navigator.pop(context); // Cerrar loader
+      Navigator.pop(context);
 
       if (resData.status == 'success') {
-        // 2. Generar PDF visual en memoria
+
         final bytes = await _pdfService.generarPdf(resData.data!);
 
         if (mounted) {
@@ -144,15 +144,15 @@ class _FirmarReportesGeneradosViewState
                     const Divider(),
                     Expanded(
                       child: PdfPreview(
-                        build: (format) => bytes, // Bytes generados
-                        // --- SEGURIDAD: DESHABILITAR EXPORTACIÓN ---
+                        build: (format) => bytes,
+
                         allowPrinting: false,
                         allowSharing: false,
                         canChangeOrientation: false,
                         canChangePageFormat: false,
                         canDebug: false,
-                        actions: [], // Quitamos botones extra
-                        // -------------------------------------------
+                        actions: [],
+
                         initialPageFormat: PdfPageFormat.a4,
                         pdfFileName: "VistaPrevia.pdf",
                       ),
@@ -172,7 +172,7 @@ class _FirmarReportesGeneradosViewState
     }
   }
 
-  // --- LÓGICA FIRMA (CON DATOS DE USUARIO) ---
+
   Future<void> _confirmarFirma(Reporte r) async {
     bool ok =
         await showDialog<bool>(
@@ -211,7 +211,7 @@ class _FirmarReportesGeneradosViewState
         false;
 
     if (ok) {
-      // OBTENER USUARIO ACTUAL PARA LA FIRMA
+
       final usuario = Provider.of<AuthProvider>(
         context,
         listen: false,
@@ -220,7 +220,7 @@ class _FirmarReportesGeneradosViewState
 
       setState(() => _isLoading = true);
 
-      // Pasamos ID y ROL para que el backend genere la estampa y determine el flujo
+
       final res = await _service.firmarReporte(
         r.idReporte,
         usuario.idUsuario,
@@ -241,7 +241,7 @@ class _FirmarReportesGeneradosViewState
   }
 
   Future<void> _confirmarFirmaLote(String key, List<Reporte> lista) async {
-    // Extraer nombre del salón para el mensaje
+
     List<String> p = key.split('|');
     String salon = p.length > 3 ? "${p[2]} - ${p[3]}" : "este salón";
 
@@ -290,7 +290,7 @@ class _FirmarReportesGeneradosViewState
       setState(() => _isLoading = true);
       final ids = lista.map((e) => e.idReporte).toList();
 
-      // Enviar firma masiva con credenciales
+
       final res = await _service.firmarLote(
         ids,
         usuario.idUsuario,
@@ -310,7 +310,7 @@ class _FirmarReportesGeneradosViewState
     }
   }
 
-  // --- UTILS PARSEO ---
+
   String _obtenerDescripcionReporte(Reporte r) {
     final params = r.parametros ?? "";
     if (params.contains("ALUMNO:")) {
@@ -324,7 +324,7 @@ class _FirmarReportesGeneradosViewState
     return params.split('|')[0];
   }
 
-  // --- UI PRINCIPAL ---
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -333,7 +333,7 @@ class _FirmarReportesGeneradosViewState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Encabezado
+
           Row(
             children: [
               Text(
@@ -355,7 +355,7 @@ class _FirmarReportesGeneradosViewState
           ),
           const SizedBox(height: 25),
 
-          // Tabs Superiores
+
           Container(
             decoration: BoxDecoration(
               color: Colors.grey[100],
@@ -390,7 +390,7 @@ class _FirmarReportesGeneradosViewState
           ),
           const SizedBox(height: 20),
 
-          // Contenido
+
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -446,7 +446,7 @@ class _FirmarReportesGeneradosViewState
     ),
   );
 
-  // VISTAS INTERNAS
+
   Widget _buildBoletasView() {
     if (_boletasAgrupadas.isEmpty) return _empty("No hay boletas pendientes.");
     return ListView.builder(
@@ -477,22 +477,22 @@ class _FirmarReportesGeneradosViewState
     ),
   );
 
-  // TARJETAS
+
   Widget _cardItem(Reporte r, IconData icon, Color color) {
-    // Personalización para Reportes de Rendimiento (Limpieza visual)
+
     bool esRendimiento = r.tipoReporte == 'Reporte de Rendimiento';
     String titulo = r.tipoReporte;
     String subtitulo = "";
 
     if (esRendimiento) {
-      // Solo mostramos ID y Fecha para que no se vea redundante
+
       String fecha = DateFormat(
         'dd/MM/yyyy',
       ).format(DateTime.parse(r.fechaGeneracion));
       subtitulo =
           "ID: #${r.idReporte.toString().padLeft(4, '0')}  |  Fecha: $fecha";
     } else {
-      // Para certificados y otros, mostramos descripción (nombre alumno)
+
       subtitulo = _obtenerDescripcionReporte(r);
     }
 
@@ -567,7 +567,7 @@ class _FirmarReportesGeneradosViewState
     );
   }
 
-  // Botón de acción pequeño
+
   Widget _actionBtn(
     IconData icon,
     Color color,
@@ -615,7 +615,7 @@ class _FirmarReportesGeneradosViewState
           "${list.length} Alumnos  •  $docente",
           style: TextStyle(fontSize: 12, color: Colors.grey[600]),
         ),
-        // Botón "Firmar Todo" Premium
+
         trailing: Container(
           margin: const EdgeInsets.only(right: 8),
           child: ElevatedButton.icon(
@@ -689,9 +689,9 @@ class _FirmarReportesGeneradosViewState
     child: Icon(i, size: 20, color: c),
   );
 
-  // --- MODAL DETALLE MEJORADO ---
+
   void _verInfo(Reporte r) {
-    // Parsear contenido para mostrarlo mejor
+
     String contenido = r.parametros?.replaceAll('|', '\n\n') ?? "Sin datos";
 
     showDialog(
@@ -704,7 +704,7 @@ class _FirmarReportesGeneradosViewState
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Cabecera bonita
+
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -754,7 +754,7 @@ class _FirmarReportesGeneradosViewState
                   ],
                 ),
               ),
-              // Contenido
+
               Padding(
                 padding: const EdgeInsets.all(25),
                 child: Column(
@@ -789,7 +789,7 @@ class _FirmarReportesGeneradosViewState
                   ],
                 ),
               ),
-              // Footer con botón
+
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
                 child: SizedBox(

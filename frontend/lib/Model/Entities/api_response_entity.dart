@@ -1,7 +1,7 @@
 class ApiResponse<T> {
-  String status; // "success" o "error"
-  String? message; // Mensaje descriptivo
-  T? data; // Datos dinámicos (puede ser Usuario, Lista de Reportes, etc.)
+  String status;
+  String? message;
+  T? data;
 
   ApiResponse({required this.status, this.message, this.data});
 

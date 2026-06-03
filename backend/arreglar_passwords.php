@@ -5,13 +5,13 @@ try {
     $db = new Conexion();
     $conn = $db->conectar();
 
-    // 1. La contraseña que queremos usar
+
     $passwordPlano = "123456";
 
-    // 2. Generamos el hash compatible con TU versión de PHP
+
     $hashReal = password_hash($passwordPlano, PASSWORD_DEFAULT);
 
-    // 3. Actualizamos TODOS los usuarios para que usen esta contraseña
+
     $query = "UPDATE Usuario_Sistema SET contrasena_hash = :hash";
     $stmt = $conn->prepare($query);
     $stmt->bindParam(":hash", $hashReal);

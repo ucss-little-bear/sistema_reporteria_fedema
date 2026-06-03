@@ -1,14 +1,14 @@
 class Reporte {
   final int idReporte;
   final int idTipoReporte;
-  final String tipoReporte; // Descripción (ej: "Boleta de Notas")
+  final String tipoReporte;
   final int idEstadoReporte;
-  final String estadoReporte; // Descripción (ej: "Generado")
+  final String estadoReporte;
   final String fechaGeneracion;
-  final String? rutaArchivo; // SQL o Ruta PDF
+  final String? rutaArchivo;
   final String? parametros;
-  final String? informacionAdicional; // Para agrupar salones
-  final String? generador; // Nombre del usuario que lo creó
+  final String? informacionAdicional;
+  final String? generador;
 
   Reporte({
     required this.idReporte,

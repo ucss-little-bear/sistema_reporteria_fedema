@@ -15,23 +15,23 @@ class HistorialReportesView extends StatefulWidget {
 
 class _HistorialReportesViewState extends State<HistorialReportesView>
     with TickerProviderStateMixin {
-  // Cambiado a TickerProviderStateMixin
+
   final ReporteService _service = ReporteService();
 
   bool _isLoading = true;
   bool _esDocente = false;
 
-  // Datos Originales
+
   List<Reporte> _boletasOriginales = [];
   List<Reporte> _rendimientoOriginales = [];
   List<Reporte> _certificadosOriginales = [];
 
-  // Datos Filtrados
+
   Map<String, List<Reporte>> _boletasGroup = {};
   List<Reporte> _rendimientoFiltrados = [];
   List<Reporte> _certificadosFiltrados = [];
 
-  // Buscadores
+
   final TextEditingController _searchBoletas = TextEditingController();
   final TextEditingController _searchRendimiento = TextEditingController();
   final TextEditingController _searchCertificados = TextEditingController();
@@ -41,11 +41,11 @@ class _HistorialReportesViewState extends State<HistorialReportesView>
   @override
   void initState() {
     super.initState();
-    // Inicializamos con 1 pestaña por defecto para evitar errores de null
+
     _tabController = TabController(length: 1, vsync: this);
 
     _setupListeners();
-    // Usamos addPostFrameCallback para cargar datos después del primer build
+
     WidgetsBinding.instance.addPostFrameCallback((_) => _cargarHistorial());
   }
 
@@ -64,7 +64,7 @@ class _HistorialReportesViewState extends State<HistorialReportesView>
     super.dispose();
   }
 
-  // --- CARGA DE DATOS ---
+
   Future<void> _cargarHistorial() async {
     setState(() => _isLoading = true);
     final usuario = Provider.of<AuthProvider>(
@@ -73,13 +73,13 @@ class _HistorialReportesViewState extends State<HistorialReportesView>
     ).usuarioActual;
     if (usuario == null) return;
 
-    // Detectar Rol
+
     bool esDocenteNuevo = (usuario.idRol == 3);
 
-    // Reconfigurar TabController SOLO si cambia la cantidad de pestañas
+
     int nuevaLongitud = esDocenteNuevo ? 1 : 3;
     if (_tabController.length != nuevaLongitud) {
-      _tabController.dispose(); // Limpiar el anterior
+      _tabController.dispose();
       _tabController = TabController(length: nuevaLongitud, vsync: this);
     }
 
@@ -107,7 +107,7 @@ class _HistorialReportesViewState extends State<HistorialReportesView>
               .toList();
         }
 
-        // Filtros iniciales
+
         _filtrarBoletas();
         if (!_esDocente) {
           _filtrarRendimiento();
@@ -123,7 +123,7 @@ class _HistorialReportesViewState extends State<HistorialReportesView>
     }
   }
 
-  // --- FILTROS ---
+
   void _filtrarBoletas() {
     String q = _searchBoletas.text.toLowerCase();
     Map<String, List<Reporte>> group = {};
@@ -161,19 +161,19 @@ class _HistorialReportesViewState extends State<HistorialReportesView>
     });
   }
 
-  // --- UTILS VISUALES ---
+
   Color _getColorEstado(int? idEstado) {
     switch (idEstado) {
       case 1:
-        return Colors.blue; // Generado
+        return Colors.blue;
       case 2:
-        return Colors.orange; // Revisado
+        return Colors.orange;
       case 5:
-        return Colors.purple; // Firmado (Pendiente Docente)
+        return Colors.purple;
       case 3:
-        return Colors.green; // Final
+        return Colors.green;
       case 4:
-        return Colors.teal; // Exportado
+        return Colors.teal;
       default:
         return Colors.grey;
     }
@@ -191,7 +191,7 @@ class _HistorialReportesViewState extends State<HistorialReportesView>
     return params.split('|')[0];
   }
 
-  // --- UI ---
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -201,7 +201,7 @@ class _HistorialReportesViewState extends State<HistorialReportesView>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Encabezado Historial
+
           Row(
             children: [
               Text(
@@ -221,7 +221,7 @@ class _HistorialReportesViewState extends State<HistorialReportesView>
           ),
           const SizedBox(height: 25),
 
-          // Tabs Dinámicos
+
           Container(
             decoration: BoxDecoration(
               color: Colors.grey[100],
@@ -243,18 +243,18 @@ class _HistorialReportesViewState extends State<HistorialReportesView>
               labelColor: Colors.blueGrey[900],
               unselectedLabelColor: Colors.grey[600],
               labelStyle: const TextStyle(fontWeight: FontWeight.bold),
-              tabs: _buildTabs(), // Tabs condicionales
+              tabs: _buildTabs(),
             ),
           ),
           const SizedBox(height: 20),
 
-          // Vistas Dinámicas
+
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : TabBarView(
                     controller: _tabController,
-                    children: _buildTabViews(), // Vistas condicionales
+                    children: _buildTabViews(),
                   ),
           ),
         ],
@@ -262,7 +262,7 @@ class _HistorialReportesViewState extends State<HistorialReportesView>
     );
   }
 
-  // Constructor de Tabs
+
   List<Widget> _buildTabs() {
     List<Widget> tabs = [
       _tab("Boletas", _boletasOriginales.length, Icons.folder),
@@ -281,7 +281,7 @@ class _HistorialReportesViewState extends State<HistorialReportesView>
     return tabs;
   }
 
-  // Constructor de Vistas
+
   List<Widget> _buildTabViews() {
     List<Widget> views = [
       _buildTabContent(
@@ -359,7 +359,7 @@ class _HistorialReportesViewState extends State<HistorialReportesView>
     );
   }
 
-  // LISTA BOLETAS (Agrupadas)
+
   Widget _buildBoletasList() {
     if (_boletasGroup.isEmpty) return _empty();
     return ListView.builder(
@@ -432,7 +432,7 @@ class _HistorialReportesViewState extends State<HistorialReportesView>
     );
   }
 
-  // LISTA SIMPLE
+
   Widget _buildSimpleList(List<Reporte> list, IconData icon) {
     if (list.isEmpty) return _empty();
     return ListView.builder(
@@ -474,7 +474,7 @@ class _HistorialReportesViewState extends State<HistorialReportesView>
     );
   }
 
-  // COMPONENTES UI
+
   Widget _iconBox(IconData i, MaterialColor c) => Container(
     padding: const EdgeInsets.all(8),
     decoration: BoxDecoration(

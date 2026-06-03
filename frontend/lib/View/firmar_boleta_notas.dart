@@ -6,7 +6,7 @@ import 'package:pdf/pdf.dart';
 import 'package:flutter/material.dart';
 
 import 'package:provider/provider.dart';
-import 'package:printing/printing.dart'; // Requerido para PdfPreview
+import 'package:printing/printing.dart';
 
 class FirmarBoletaNotasView extends StatefulWidget {
   const FirmarBoletaNotasView({super.key});
@@ -22,8 +22,8 @@ class _FirmarBoletaNotasViewState extends State<FirmarBoletaNotasView>
 
   bool _isLoading = true;
 
-  // Solo necesitamos agrupar boletas, pero mantengo las listas vacías
-  // para respetar la estructura del TabController si quisieras expandirlo.
+
+
   Map<String, List<Reporte>> _boletasAgrupadas = {};
 
   late TabController _tabController;
@@ -31,7 +31,7 @@ class _FirmarBoletaNotasViewState extends State<FirmarBoletaNotasView>
   @override
   void initState() {
     super.initState();
-    // Solo 1 tab principal porque el docente solo firma boletas
+
     _tabController = TabController(length: 1, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) => _cargarReportes());
   }
@@ -42,7 +42,7 @@ class _FirmarBoletaNotasViewState extends State<FirmarBoletaNotasView>
     super.dispose();
   }
 
-  // --- CARGA DE DATOS ---
+
   Future<void> _cargarReportes() async {
     setState(() => _isLoading = true);
     final usuario = Provider.of<AuthProvider>(
@@ -57,8 +57,8 @@ class _FirmarBoletaNotasViewState extends State<FirmarBoletaNotasView>
         usuario.idRol,
       );
       if (res.status == 'success' && res.data != null) {
-        // FILTRO CLAVE: Estado 5 = Firmado por Secretaría (Espera Docente)
-        // Y aseguramos que sea tipo 'Boleta de Notas'
+
+
         final pendientes = res.data!
             .where(
               (r) =>
@@ -79,14 +79,14 @@ class _FirmarBoletaNotasViewState extends State<FirmarBoletaNotasView>
   void _distribuirDatos(List<Reporte> data) {
     _boletasAgrupadas.clear();
     for (var r in data) {
-      // Agrupamos por Salón (informacionAdicional contiene el grado/seccion)
+
       String k = r.informacionAdicional ?? "Otros";
       if (!_boletasAgrupadas.containsKey(k)) _boletasAgrupadas[k] = [];
       _boletasAgrupadas[k]!.add(r);
     }
   }
 
-  // --- LÓGICA PDF (VISUALIZADOR SEGURO) ---
+
   Future<void> _verPdf(Reporte r) async {
     showDialog(
       context: context,
@@ -99,7 +99,7 @@ class _FirmarBoletaNotasViewState extends State<FirmarBoletaNotasView>
       Navigator.pop(context);
 
       if (resData.status == 'success') {
-        // Aquí el PDF generator mostrará las firmas de Dir. y Sec. si existen en la BD
+
         final bytes = await _pdfService.generarPdf(resData.data!);
 
         if (mounted) {
@@ -161,7 +161,7 @@ class _FirmarBoletaNotasViewState extends State<FirmarBoletaNotasView>
     }
   }
 
-  // --- LÓGICA FIRMA DOCENTE ---
+
   Future<void> _confirmarFirma(Reporte r) async {
     bool ok =
         await showDialog<bool>(
@@ -208,7 +208,7 @@ class _FirmarBoletaNotasViewState extends State<FirmarBoletaNotasView>
 
       setState(() => _isLoading = true);
 
-      // Backend detectará rol 3 (Docente) y pasará a estado 3 (Final)
+
       final res = await _service.firmarReporte(
         r.idReporte,
         usuario.idUsuario,
@@ -229,7 +229,7 @@ class _FirmarBoletaNotasViewState extends State<FirmarBoletaNotasView>
   }
 
   Future<void> _confirmarFirmaLote(String key, List<Reporte> lista) async {
-    // Extraer nombre para el mensaje
+
     List<String> p = key.split('|');
     String salon = p.length > 3 ? "${p[2]} - ${p[3]}" : "este salón";
 
@@ -310,7 +310,7 @@ class _FirmarBoletaNotasViewState extends State<FirmarBoletaNotasView>
     return params.split('|')[0];
   }
 
-  // --- UI ---
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -340,7 +340,7 @@ class _FirmarBoletaNotasViewState extends State<FirmarBoletaNotasView>
           ),
           const SizedBox(height: 25),
 
-          // Tab único simplificado para Docente
+
           Container(
             decoration: BoxDecoration(
               color: Colors.grey[100],
@@ -441,7 +441,7 @@ class _FirmarBoletaNotasViewState extends State<FirmarBoletaNotasView>
   Widget _cardBoletaGroup(String key, List<Reporte> list) {
     List<String> p = key.split('|');
     String title = p.length > 3 ? "${p[2]} - ${p[3]}" : key;
-    // El docente ya sabe quién es, pero mostramos el periodo
+
     String periodo = p.length > 4 ? "Bimestre ${p[4].replaceAll('B', '')}" : "";
 
     return Card(

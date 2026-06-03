@@ -11,7 +11,7 @@ class PdfGeneratorService {
     final List<dynamic> filas = data['resultados'] ?? [];
     final String tipo = (info['tipo_reporte'] ?? 'Documento').toString();
 
-    // Configuración de página
+
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
@@ -34,9 +34,9 @@ class PdfGeneratorService {
     return pdf.save();
   }
 
-  // ============================================================
-  // 1. LÓGICA REPORTE DE RENDIMIENTO
-  // ============================================================
+
+
+
   List<pw.Widget> _buildContenidoRendimiento(
     Map<String, dynamic> info,
     List<dynamic> filas,
@@ -120,9 +120,9 @@ class PdfGeneratorService {
     ];
   }
 
-  // ============================================================
-  // 2. LÓGICA CERTIFICADO
-  // ============================================================
+
+
+
   List<pw.Widget> _buildContenidoCertificado(
     Map<String, dynamic> info,
     List<dynamic> filas,
@@ -291,9 +291,9 @@ class PdfGeneratorService {
     ];
   }
 
-  // ============================================================
-  // 3. LÓGICA BOLETA
-  // ============================================================
+
+
+
   List<pw.Widget> _buildContenidoBoleta(
     Map<String, dynamic> info,
     List<dynamic> filas,
@@ -368,9 +368,9 @@ class PdfGeneratorService {
     ];
   }
 
-  // ============================================================
-  // 4. SECCIÓN DE FIRMAS (DISEÑO TIPO ROBÓTICO / DIGITAL)
-  // ============================================================
+
+
+
 
   pw.Widget _buildFirmasSection(String tipo, Map<String, dynamic> info) {
     bool necesitaFirmaDocente = tipo.contains('Boleta');
@@ -398,37 +398,37 @@ class PdfGeneratorService {
     );
   }
 
-  // Bloque de firma ESTILO DIGITAL SIMPLE
+
   pw.Widget _firmaBlock(String cargo, String? firmaDigital) {
     return pw.Column(
-      // Centramos la columna para que la línea y el cargo queden centrados
+
       crossAxisAlignment: pw.CrossAxisAlignment.center,
       children: [
         if (firmaDigital != null)
           pw.Container(
-            width: 140, // Ancho fijo del bloque de texto
+            width: 140,
             padding: const pw.EdgeInsets.only(bottom: 4),
-            // Sin bordes ni colores de fondo
+
             child: pw.Text(
               firmaDigital,
-              // Fuente Courier (Robótica/Máquina de escribir)
+
               style: pw.TextStyle(
                 font: pw.Font.courier(),
-                fontSize: 5, // Letra pequeña típica de metadatos digitales
-                color: PdfColors.black, // Color negro simple
+                fontSize: 5,
+                color: PdfColors.black,
               ),
               textAlign: pw
                   .TextAlign
-                  .left, // Texto alineado a la izquierda como pediste
+                  .left,
             ),
           )
         else
-          pw.Container(height: 40, width: 140), // Espacio vacío
-        // Línea de firma
+          pw.Container(height: 40, width: 140),
+
         pw.Container(width: 140, height: 1, color: PdfColors.black),
         pw.SizedBox(height: 4),
 
-        // Cargo
+
         pw.Text(
           cargo,
           style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
@@ -437,7 +437,7 @@ class PdfGeneratorService {
     );
   }
 
-  // --- MÉTODOS AUXILIARES ---
+
 
   Map<String, dynamic> _calcularEstadisticas(List<dynamic> filas) {
     Map<String, dynamic> alumnos = {};

@@ -18,7 +18,7 @@ class DashboardView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
+
           Text(
             "Bienvenido, ${usuario.nombres} ${usuario.apellidos}",
             style: theme.textTheme.displaySmall?.copyWith(
@@ -35,26 +35,26 @@ class DashboardView extends StatelessWidget {
               fontSize: 16,
             ),
           ),
-          const SizedBox(height: 30), // Reduje un poco el espacio aquí también
-          // Grilla de Tarjetas
+          const SizedBox(height: 30),
+
           LayoutBuilder(
             builder: (context, constraints) {
-              // Lógica responsiva de columnas
+
               int crossAxisCount = constraints.maxWidth > 900
                   ? 3
                   : (constraints.maxWidth > 400 ? 2 : 1);
 
-              // CORRECCIÓN VISUAL:
-              // Aumentamos el aspect ratio para que las tarjetas sean menos altas.
-              // 1.6 significa que el ancho es 1.6 veces el alto.
+
+
+
               double aspectRatio = constraints.maxWidth > 400 ? 1.7 : 1.5;
 
               return GridView.count(
                 crossAxisCount: crossAxisCount,
-                crossAxisSpacing: 20, // Espaciado un poco más compacto
+                crossAxisSpacing: 20,
                 mainAxisSpacing: 20,
                 shrinkWrap: true,
-                childAspectRatio: aspectRatio, // <--- Esto reduce la altura
+                childAspectRatio: aspectRatio,
                 physics: const NeverScrollableScrollPhysics(),
                 children: _buildDashboardCards(usuario.idRol),
               );
@@ -68,7 +68,7 @@ class DashboardView extends StatelessWidget {
   List<Widget> _buildDashboardCards(int idRol) {
     List<Widget> cards = [];
 
-    // --- ROL 1: SECRETARÍA ---
+
     if (idRol == 1) {
       cards.add(
         _buildCard(
@@ -108,7 +108,7 @@ class DashboardView extends StatelessWidget {
       );
     }
 
-    // --- ROL 2: DIRECTORA ---
+
     if (idRol == 2) {
       cards.add(
         _buildCard(
@@ -139,7 +139,7 @@ class DashboardView extends StatelessWidget {
       );
     }
 
-    // --- ROL 3: DOCENTE ---
+
     if (idRol == 3) {
       cards.add(
         _buildCard(
@@ -195,17 +195,17 @@ class DashboardView extends StatelessWidget {
               ),
             ],
           ),
-          padding: const EdgeInsets.all(20), // Padding interno más ajustado
+          padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            // CORRECCIÓN: Usar spaceBetween en lugar de Spacer para distribución exacta
+
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Parte Superior: Icono y Textos
+
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Icono
+
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
@@ -214,8 +214,8 @@ class DashboardView extends StatelessWidget {
                     ),
                     child: Icon(icon, color: color, size: 26),
                   ),
-                  const SizedBox(height: 12), // Espacio reducido
-                  // Título
+                  const SizedBox(height: 12),
+
                   Text(
                     title,
                     style: const TextStyle(
@@ -228,7 +228,7 @@ class DashboardView extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
-                  // Descripción
+
                   Text(
                     desc,
                     style: TextStyle(fontSize: 13, color: Colors.grey[600]),
@@ -238,7 +238,7 @@ class DashboardView extends StatelessWidget {
                 ],
               ),
 
-              // Parte Inferior: Botón
+
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
@@ -246,7 +246,7 @@ class DashboardView extends StatelessWidget {
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(
                       vertical: 12,
-                    ), // Botón más delgado
+                    ),
                     side: BorderSide(color: Colors.grey.shade300),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),

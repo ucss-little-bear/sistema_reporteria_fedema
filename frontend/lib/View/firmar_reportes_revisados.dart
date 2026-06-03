@@ -5,7 +5,7 @@ import 'package:frontend/Model/Entities/reporte_entity.dart';
 import 'package:frontend/Model/Services/pdf_generator_service.dart';
 import 'package:frontend/Model/Services/reporte_service.dart';
 import 'package:provider/provider.dart';
-import 'package:printing/printing.dart'; // Requerido para PdfPreview
+import 'package:printing/printing.dart';
 import 'package:intl/intl.dart';
 
 class FirmarReportesRevisadosView extends StatefulWidget {
@@ -24,7 +24,7 @@ class _FirmarReportesRevisadosViewState
 
   bool _isLoading = true;
 
-  // Listas de datos
+
   Map<String, List<Reporte>> _boletasAgrupadas = {};
   List<Reporte> _listaRendimiento = [];
   List<Reporte> _listaCertificados = [];
@@ -44,7 +44,7 @@ class _FirmarReportesRevisadosViewState
     super.dispose();
   }
 
-  // --- CARGA DE DATOS ---
+
   Future<void> _cargarReportes() async {
     setState(() => _isLoading = true);
     final usuario = Provider.of<AuthProvider>(
@@ -59,7 +59,7 @@ class _FirmarReportesRevisadosViewState
         usuario.idRol,
       );
       if (res.status == 'success' && res.data != null) {
-        // FILTRO CLAVE: Estado 2 = Revisado (Ya firmado por Directora)
+
         final pendientes = res.data!
             .where((r) => r.idEstadoReporte == 2)
             .toList();
@@ -92,7 +92,7 @@ class _FirmarReportesRevisadosViewState
     }
   }
 
-  // --- LÓGICA PDF (VISUALIZADOR SEGURO) ---
+
   Future<void> _verPdf(Reporte r) async {
     showDialog(
       context: context,
@@ -166,7 +166,7 @@ class _FirmarReportesRevisadosViewState
     }
   }
 
-  // --- LÓGICA FIRMA (SECRETARÍA) ---
+
   Future<void> _confirmarFirma(Reporte r) async {
     bool ok =
         await showDialog<bool>(
@@ -299,7 +299,7 @@ class _FirmarReportesRevisadosViewState
     }
   }
 
-  // --- UTILS ---
+
   String _obtenerDescripcionReporte(Reporte r) {
     final params = r.parametros ?? "";
     if (params.contains("ALUMNO:")) {
@@ -313,7 +313,7 @@ class _FirmarReportesRevisadosViewState
     return params.split('|')[0];
   }
 
-  // --- UI ---
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -361,7 +361,7 @@ class _FirmarReportesRevisadosViewState
                   ),
                 ],
               ),
-              // Color temático Naranja para Secretaría
+
               labelColor: Colors.orange[900],
               unselectedLabelColor: Colors.grey[600],
               labelStyle: const TextStyle(fontWeight: FontWeight.bold),

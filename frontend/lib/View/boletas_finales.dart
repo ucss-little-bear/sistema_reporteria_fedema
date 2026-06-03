@@ -21,11 +21,11 @@ class _BoletasFinalesViewState extends State<BoletasFinalesView> {
 
   bool _isLoading = true;
 
-  // Datos
+
   List<Reporte> _boletasOriginales = [];
   Map<String, List<Reporte>> _boletasAgrupadas = {};
 
-  // Controlador de Búsqueda
+
   final TextEditingController _searchController = TextEditingController();
 
   @override
@@ -41,7 +41,7 @@ class _BoletasFinalesViewState extends State<BoletasFinalesView> {
     super.dispose();
   }
 
-  // --- CARGA DE DATOS ---
+
   Future<void> _cargarReportes() async {
     setState(() => _isLoading = true);
     final usuario = Provider.of<AuthProvider>(
@@ -102,7 +102,7 @@ class _BoletasFinalesViewState extends State<BoletasFinalesView> {
     try {
       final resData = await _service.obtenerDatosPdf(r.idReporte);
       if (resData.status == 'success') {
-        // Generamos el PDF con TODAS las firmas (Sec + Dir + Doc)
+
         final bytes = await _pdfService.generarPdf(resData.data!);
         Navigator.pop(context);
 
@@ -145,12 +145,12 @@ class _BoletasFinalesViewState extends State<BoletasFinalesView> {
 
     for (var r in lista) {
       await _exportarPDF(r);
-      // Pequeña pausa para estabilidad
+
       await Future.delayed(const Duration(milliseconds: 600));
     }
   }
 
-  // --- UTILS ---
+
   String _parseAlumnoName(Reporte r) {
     final params = r.parametros ?? "";
     if (params.contains("ALUMNO:")) {
@@ -163,7 +163,7 @@ class _BoletasFinalesViewState extends State<BoletasFinalesView> {
     return params.split('|')[0];
   }
 
-  // --- UI ---
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -172,7 +172,7 @@ class _BoletasFinalesViewState extends State<BoletasFinalesView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Encabezado
+
           Row(
             children: [
               Text(
@@ -192,7 +192,7 @@ class _BoletasFinalesViewState extends State<BoletasFinalesView> {
           ),
           const SizedBox(height: 25),
 
-          // Buscador
+
           TextField(
             controller: _searchController,
             decoration: InputDecoration(
@@ -211,7 +211,7 @@ class _BoletasFinalesViewState extends State<BoletasFinalesView> {
           ),
           const SizedBox(height: 20),
 
-          // Contenido
+
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -232,7 +232,7 @@ class _BoletasFinalesViewState extends State<BoletasFinalesView> {
   }
 
   Widget _buildGroupCard(String key, List<Reporte> list) {
-    // Parsear key para mostrar titulo bonito: AÑO|NIVEL|GRADO|SECCION|BIM|DOCENTE
+
     List<String> p = key.split('|');
     String titulo = p.length > 3 ? "${p[2]} - ${p[3]}" : key;
     String subtitulo = p.length > 4
@@ -258,7 +258,7 @@ class _BoletasFinalesViewState extends State<BoletasFinalesView> {
         ),
         subtitle: Text("${list.length} Boletas • $subtitulo"),
 
-        // Botón de Exportación Masiva
+
         trailing: ElevatedButton.icon(
           onPressed: () => _exportarGrupo(key, list),
           icon: const Icon(Icons.download_for_offline, size: 18),
@@ -296,7 +296,7 @@ class _BoletasFinalesViewState extends State<BoletasFinalesView> {
             ),
           ),
 
-          // Botón Ver (Preview)
+
           Tooltip(
             message: "Vista Previa",
             child: InkWell(
@@ -317,7 +317,7 @@ class _BoletasFinalesViewState extends State<BoletasFinalesView> {
           ),
           const SizedBox(width: 10),
 
-          // Botón Descargar Individual
+
           Tooltip(
             message: "Descargar PDF",
             child: InkWell(
@@ -341,7 +341,7 @@ class _BoletasFinalesViewState extends State<BoletasFinalesView> {
     );
   }
 
-  // Método auxiliar para ver PDF sin descargar
+
   Future<void> _verPdfPreview(Reporte r) async {
     showDialog(
       barrierDismissible: false,

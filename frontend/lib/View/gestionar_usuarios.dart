@@ -31,7 +31,7 @@ class _GestionarUsuariosViewState extends State<GestionarUsuariosView> {
     super.dispose();
   }
 
-  // 1. Modal Crear/Editar Usuario
+
   void _abrirDialogoUsuario({Usuario? usuarioEditar}) {
     showDialog(
       context: context,
@@ -39,7 +39,7 @@ class _GestionarUsuariosViewState extends State<GestionarUsuariosView> {
     );
   }
 
-  // 2. Modal Cambiar Contraseña
+
   void _abrirDialogoPassword(Usuario usuario) {
     showDialog(
       context: context,
@@ -47,15 +47,15 @@ class _GestionarUsuariosViewState extends State<GestionarUsuariosView> {
     );
   }
 
-  // 3. Modal Confirmar Estado (CON VALIDACIÓN DE AUTOPROTECCIÓN)
+
   void _confirmarCambioEstado(Usuario user) {
-    // PASO 1: Obtener el usuario logueado actualmente
+
     final currentUser = Provider.of<AuthProvider>(
       context,
       listen: false,
     ).usuarioActual;
 
-    // PASO 2: Validar que no sea él mismo
+
     if (currentUser != null && currentUser.idUsuario == user.idUsuario) {
       showDialog(
         context: context,
@@ -81,10 +81,10 @@ class _GestionarUsuariosViewState extends State<GestionarUsuariosView> {
           ],
         ),
       );
-      return; // Detener el proceso aquí
+      return;
     }
 
-    // Si pasa la validación, mostrar el diálogo normal
+
     bool esActivo = (user.estado == 1);
     showDialog(
       context: context,
@@ -134,7 +134,7 @@ class _GestionarUsuariosViewState extends State<GestionarUsuariosView> {
     final theme = Theme.of(context);
     final usuarioProvider = context.watch<UsuarioProvider>();
 
-    // Lógica de Filtrado
+
     List<Usuario> usuariosFiltrados = usuarioProvider.usuarios.where((user) {
       final query = _searchController.text.toLowerCase();
       final nombreCompleto = "${user.nombres} ${user.apellidos}".toLowerCase();
@@ -168,7 +168,7 @@ class _GestionarUsuariosViewState extends State<GestionarUsuariosView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Header
+
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -200,7 +200,7 @@ class _GestionarUsuariosViewState extends State<GestionarUsuariosView> {
         ),
         const SizedBox(height: 32),
 
-        // Filtros
+
         Card(
           child: Padding(
             padding: const EdgeInsets.all(20.0),
@@ -290,7 +290,7 @@ class _GestionarUsuariosViewState extends State<GestionarUsuariosView> {
         ),
         const SizedBox(height: 24),
 
-        // Tabla
+
         Expanded(
           child: Card(
             child: usuarioProvider.isLoading
@@ -452,10 +452,10 @@ class _GestionarUsuariosViewState extends State<GestionarUsuariosView> {
   }
 }
 
-// ... (Las clases DialogUsuario y DialogCambiarPassword se mantienen iguales,
-//      solo asegúrate de copiarlas o mantenerlas al final del archivo) ...
 
-// --- DIÁLOGO CREAR/EDITAR USUARIO ---
+
+
+
 class DialogUsuario extends StatefulWidget {
   final Usuario? usuario;
 
@@ -775,7 +775,7 @@ class _DialogUsuarioState extends State<DialogUsuario> {
   }
 }
 
-// --- DIÁLOGO CAMBIAR CONTRASEÑA ---
+
 class DialogCambiarPassword extends StatefulWidget {
   final Usuario usuario;
 

@@ -14,7 +14,7 @@ class Usuario {
     required this.idRol,
     required this.nombres,
     required this.apellidos,
-    this.dni, // <--- NUEVO CAMPO
+    this.dni,
     required this.nombreUsuario,
     this.correo,
     this.rolDescripcion,
@@ -27,7 +27,7 @@ class Usuario {
       idRol: int.parse(json['id_rol'].toString()),
       nombres: json['nombres'] ?? '',
       apellidos: json['apellidos'] ?? '',
-      // Mapeo seguro del DNI
+
       dni: json['dni'] != null ? int.tryParse(json['dni'].toString()) : null,
       nombreUsuario: json['nombre_usuario'] ?? '',
       correo: json['correo'] ?? '',
@@ -42,7 +42,7 @@ class Usuario {
       'id_rol': idRol,
       'nombres': nombres,
       'apellidos': apellidos,
-      'dni': dni, // <--- NUEVO CAMPO
+      'dni': dni,
       'nombre_usuario': nombreUsuario,
       'correo': correo,
       'rol': rolDescripcion,

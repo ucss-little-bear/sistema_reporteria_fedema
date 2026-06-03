@@ -16,14 +16,14 @@ class _GenerarReportesViewState extends State<GenerarReportesView> {
   final ReporteService _service = ReporteService();
   bool _isLoading = false;
 
-  // --- Estados de Selección ---
+
   String? _tipoReporte = 'Boleta de Notas';
   String? _anioSeleccionado;
   String? _nivelSeleccionado;
   int? _idSalonSeleccionado;
   int? _bimestreSeleccionado;
 
-  // Certificado específico
+
   Map<String, dynamic>? _estudianteSeleccionado;
   bool _certificadoApto = false;
   String _certificadoMensaje = "";
@@ -33,7 +33,7 @@ class _GenerarReportesViewState extends State<GenerarReportesView> {
   final TextEditingController _fechaFinCtrl = TextEditingController();
   final TextEditingController _estudianteCtrl = TextEditingController();
 
-  // Listas de Datos
+
   List<String> _anios = [];
   List<String> _niveles = [];
   List<Map<String, dynamic>> _salones = [];
@@ -45,7 +45,7 @@ class _GenerarReportesViewState extends State<GenerarReportesView> {
     _cargarAnios();
   }
 
-  // --- MÉTODOS DE CARGA (Lógica Original) ---
+
   Future<void> _cargarAnios() async {
     try {
       final data = await _service.getAnios();
@@ -106,7 +106,7 @@ class _GenerarReportesViewState extends State<GenerarReportesView> {
     } catch (e) {}
   }
 
-  // --- LÓGICA CERTIFICADO ---
+
   Future<void> _seleccionarEstudiante(Map<String, dynamic> estudiante) async {
     setState(() {
       _estudianteSeleccionado = estudiante;
@@ -133,7 +133,7 @@ class _GenerarReportesViewState extends State<GenerarReportesView> {
     }
   }
 
-  // --- LÓGICA GENERACIÓN ---
+
   Future<void> _generarReporte({
     bool force = false,
     bool ignoreMissing = false,
@@ -235,7 +235,7 @@ class _GenerarReportesViewState extends State<GenerarReportesView> {
     }
   }
 
-  // --- DIÁLOGOS Y MODALES ---
+
   Future<bool> _pedirConfirmacionInicial() async {
     String msg = "";
     if (_tipoReporte == 'Certificado de Estudios')
@@ -536,12 +536,12 @@ class _GenerarReportesViewState extends State<GenerarReportesView> {
     if (p != null) c.text = DateFormat('yyyy-MM-dd').format(p);
   }
 
-  // --- UI PRINCIPAL (DISEÑO MATCH IMPORTAR ARCHIVOS) ---
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    // Helper de estilo (Igual que en importar_archivos_siagie.dart)
+
     InputDecoration inputDeco(String label, IconData icon) {
       return InputDecoration(
         labelText: label,
@@ -563,7 +563,7 @@ class _GenerarReportesViewState extends State<GenerarReportesView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Encabezado
+
             Text(
               "Generación de Reportes",
               style: theme.textTheme.displaySmall?.copyWith(
@@ -581,7 +581,7 @@ class _GenerarReportesViewState extends State<GenerarReportesView> {
             ),
             const SizedBox(height: 32),
 
-            // Tarjeta Principal
+
             Card(
               elevation: 2,
               shape: RoundedRectangleBorder(
@@ -594,7 +594,7 @@ class _GenerarReportesViewState extends State<GenerarReportesView> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Título Sección
+
                       Row(
                         children: [
                           Icon(
@@ -621,7 +621,7 @@ class _GenerarReportesViewState extends State<GenerarReportesView> {
                       ),
                       const Divider(height: 30, thickness: 1),
 
-                      // TIPO DE REPORTE
+
                       Text(
                         "Tipo de Documento",
                         style: theme.textTheme.labelLarge?.copyWith(
@@ -660,7 +660,7 @@ class _GenerarReportesViewState extends State<GenerarReportesView> {
                       ),
                       const SizedBox(height: 24),
 
-                      // FILTROS COMUNES (Año)
+
                       Text(
                         "Año Académico",
                         style: theme.textTheme.labelLarge?.copyWith(
@@ -684,7 +684,7 @@ class _GenerarReportesViewState extends State<GenerarReportesView> {
                       ),
                       const SizedBox(height: 24),
 
-                      // --- CASO: CERTIFICADO (Buscador Estudiante) ---
+
                       if (_tipoReporte == 'Certificado de Estudios') ...[
                         if (_anioSeleccionado != null) ...[
                           Text(
@@ -792,7 +792,7 @@ class _GenerarReportesViewState extends State<GenerarReportesView> {
                             ),
                         ],
                       ]
-                      // --- CASO: BOLETA Y RENDIMIENTO ---
+
                       else ...[
                         Row(
                           children: [
@@ -904,7 +904,7 @@ class _GenerarReportesViewState extends State<GenerarReportesView> {
                           const SizedBox(height: 20),
                         ],
 
-                        // FECHAS
+
                         Row(
                           children: [
                             Expanded(

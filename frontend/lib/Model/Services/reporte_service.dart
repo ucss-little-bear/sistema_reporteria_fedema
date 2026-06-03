@@ -8,9 +8,9 @@ import 'api_config.dart';
 import 'package:excel/excel.dart';
 
 class ReporteService {
-  // ==============================================================
-  // 1. GESTIÓN DE REPORTES (LISTADO)
-  // ==============================================================
+
+
+
   Future<ApiResponse<List<Reporte>>> listarReportes(
     int idUsuario,
     int idRol,
@@ -43,11 +43,11 @@ class ReporteService {
     }
   }
 
-  // ==============================================================
-  // 2. IMPORTACIÓN DE ARCHIVOS (SIAGIE)
-  // ==============================================================
 
-  // A. ENVIAR ASISTENCIA
+
+
+
+
   Future<ApiResponse<dynamic>> enviarAsistenciaExcel(
     PlatformFile file,
     int idUsuario, {
@@ -98,7 +98,7 @@ class ReporteService {
     }
   }
 
-  // B. ENVIAR NOTAS
+
   Future<ApiResponse<dynamic>> enviarNotasExcel(
     PlatformFile file,
     int idUsuario, {
@@ -151,11 +151,11 @@ class ReporteService {
     }
   }
 
-  // ==============================================================
-  // 3. GENERACIÓN DE REPORTES (FILTROS Y CREACIÓN)
-  // ==============================================================
 
-  // A. FILTROS EN CASCADA
+
+
+
+
   Future<List<String>> getAnios() async {
     final res = await _post("listar_anios_reporte", {});
     return (res['data'] as List).map((e) => e.toString()).toList();
@@ -177,7 +177,7 @@ class ReporteService {
     return List<Map<String, dynamic>>.from(res['data']);
   }
 
-  // Bimestres disponibles para un salón específico (Boletas)
+
   Future<List<String>> getBimestres(int idPeriodo) async {
     final res = await _post("listar_bimestres_reporte", {
       "id_periodo": idPeriodo,
@@ -185,7 +185,7 @@ class ReporteService {
     return (res['data'] as List).map((e) => e.toString()).toList();
   }
 
-  // NUEVO: Bimestres disponibles para todo un nivel (Rendimiento)
+
   Future<List<String>> getBimestresPorNivel(String anio, String nivel) async {
     final res = await _post("listar_bimestres_nivel", {
       "anio": anio,
@@ -194,7 +194,7 @@ class ReporteService {
     return (res['data'] as List).map((e) => e.toString()).toList();
   }
 
-  // B. GENERAR BOLETA DE NOTAS
+
   Future<ApiResponse<dynamic>> generarBoletaNotas({
     required int idUsuario,
     required int idPeriodo,
@@ -219,7 +219,7 @@ class ReporteService {
     }
   }
 
-  // C. GENERAR REPORTE DE RENDIMIENTO (NUEVO)
+
   Future<ApiResponse<dynamic>> generarReporteRendimiento({
     required int idUsuario,
     required String anio,
@@ -228,7 +228,7 @@ class ReporteService {
     required String fechaInicio,
     required String fechaFin,
     bool force = false,
-    bool ignoreMissing = false, // Permite generar aunque falten datos
+    bool ignoreMissing = false,
   }) async {
     try {
       final body = {
@@ -248,9 +248,9 @@ class ReporteService {
     }
   }
 
-  // ==============================================================
-  // 4. HELPERS PRIVADOS
-  // ==============================================================
+
+
+
 
   List<int> _obtenerBytes(PlatformFile file) {
     if (file.bytes != null) return file.bytes!;
@@ -323,7 +323,7 @@ class ReporteService {
     }
   }
 
-  // Crear un nuevo reporte (CU-03)
+
   Future<ApiResponse<bool>> crearReporte(
     int idUsuario,
     int tipoReporte,
@@ -335,7 +335,7 @@ class ReporteService {
         "id_usuario": idUsuario,
         "tipo_reporte": tipoReporte,
         "ruta":
-            "ruta/temporal/pendiente.pdf", // Esto luego se maneja con archivos reales
+            "ruta/temporal/pendiente.pdf",
         "parametros": parametros,
       });
 
@@ -347,7 +347,7 @@ class ReporteService {
 
       if (response.statusCode == 200) {
         final jsonMap = jsonDecode(response.body);
-        // Si status es success, devolvemos true
+
         return ApiResponse(
           status: jsonMap['status'],
           message: jsonMap['message'],
@@ -360,7 +360,7 @@ class ReporteService {
     }
   }
 
-  // Actualizar estado (Firmar) (CU-05, CU-07, CU-09)
+
   Future<ApiResponse<bool>> firmarReporte(
     int idReporte,
     int idUsuario,
@@ -483,7 +483,7 @@ class ReporteService {
         "id_reporte": idReporte,
       });
 
-      // Parseamos la respuesta para asegurar que 'filas' sea una lista
+
       if (res['status'] == 'success' && res['data'] != null) {
         return ApiResponse(
           status: 'success',

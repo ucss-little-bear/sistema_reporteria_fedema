@@ -10,13 +10,13 @@ class ReporteProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
 
-  // Getters
+
   List<Reporte> get listaReportes => _listaReportes;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  // CU-13: Cargar reportes (Listar)
-  // Recibe el usuario actual para saber qué filtrar
+
+
   Future<void> cargarReportes(int idUsuario, int idRol) async {
     _setLoading(true);
     _errorMessage = null;
@@ -30,7 +30,7 @@ class ReporteProvider extends ChangeNotifier {
       } else {
         _errorMessage =
             response.message ?? 'No se pudieron cargar los reportes';
-        _listaReportes = []; // Limpiar lista en caso de error
+        _listaReportes = [];
       }
     } catch (e) {
       _errorMessage = 'Error de conexión al cargar reportes';
@@ -39,9 +39,9 @@ class ReporteProvider extends ChangeNotifier {
     _setLoading(false);
   }
 
-  // CU-03: Crear un nuevo reporte
 
-  // CU-05, CU-07, CU-09: Firmar reporte (Actualizar estado)
+
+
 
   void _setLoading(bool valor) {
     _isLoading = valor;

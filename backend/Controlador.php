@@ -1,12 +1,12 @@
 <?php
-// INICIAR BUFFER: Atrapa cualquier error o espacio en blanco indeseado
+
 ob_start();
 
 
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 error_reporting(E_ALL);
-set_time_limit(300); // 
+set_time_limit(300);
 ini_set('memory_limit', '512M');
 
 
@@ -24,20 +24,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 $response = ["status" => "error", "message" => "Error inicial desconocido"];
 
 try {
-    // Limpiamos cualquier ruido previo
+
     ob_clean();
 
-    // Validar archivos con nombre exacto (respetando Mayúsculas)
+
     if (!file_exists('Negocio.php')) {
         throw new Exception("El archivo Negocio.php no existe (Revise mayúsculas).");
     }
-    require_once 'Negocio.php'; // Corregido de 'negocio.php' a 'Negocio.php'
+    require_once 'Negocio.php';
 
     $negocio = new Negocio();
     $input = file_get_contents("php://input");
     
     if (empty($input)) {
-        // Si llega vacío, intentar leer $_POST (a veces pasa en algunos servidores)
+
         $data = (object)$_POST;
     } else {
         $data = json_decode($input);
@@ -67,7 +67,7 @@ try {
                     $data->dni ?? '', 
                     $data->usuario, 
                     $data->id_rol ?? 3,
-                    $data->correo ?? '' // <--- Nuevo parámetro
+                    $data->correo ?? ''
                 );
             } else {
                 $response = ["status" => "error", "message" => "Datos incompletos para editar"];
@@ -83,7 +83,7 @@ try {
             break;
 
         case 'crear_usuario':
-            // Validamos que lleguen los datos básicos
+
             if (isset($data->nombres) && isset($data->usuario) && isset($data->password)) {
                 $response = $negocio->crearUsuario(
                     $data->nombres, 
@@ -92,7 +92,7 @@ try {
                     $data->usuario, 
                     $data->password, 
                     $data->id_rol ?? 3,
-                    $data->correo ?? '' // <--- Nuevo parámetro (opcional si viene null)
+                    $data->correo ?? ''
                 );
             } else {
                 $response = ["status" => "error", "message" => "Datos incompletos"];
@@ -106,7 +106,7 @@ try {
             break;
 
         case 'listar_reportes':
-            // Pasamos usuario y rol por si quieres filtrar a futuro
+
             $idU = $data->id_usuario ?? 0;
             $idR = $data->id_rol ?? 0;
             $response = ["status" => "success", "data" => $negocio->listarReportes($idU, $idR)];
@@ -121,8 +121,8 @@ try {
             }
             break;
 
-        case 'cambiar_estado_reporte': // AHORA ES "FIRMAR REPORTE"
-            // Recibimos id_usuario y id_rol del frontend para saber quién firma
+        case 'cambiar_estado_reporte':
+
             if (isset($data->id_reporte) && isset($data->id_usuario) && isset($data->id_rol)) {
                 $response = $negocio->firmarReporte($data->id_reporte, $data->id_usuario, $data->id_rol);
             } else {
@@ -170,14 +170,14 @@ try {
             if (isset($data->filas) && isset($data->id_usuario)) {
                 $hojas = json_decode(json_encode($data->filas), true);
                 $nombre = $data->nombre_archivo ?? 'notas.xlsx';
-                $idDocente = isset($data->id_docente) ? $data->id_docente : null; // AHORA SE RECIBE
+                $idDocente = isset($data->id_docente) ? $data->id_docente : null;
                 $force = isset($data->force_upload) ? $data->force_upload : false;
                 
                 $response = $negocio->procesarNotasExcel(
                     $hojas, 
                     $nombre, 
                     $data->id_usuario,
-                    $idDocente, // SE PASA A NEGOCIO
+                    $idDocente,
                     $force
                 );
             } else {
@@ -212,7 +212,7 @@ try {
             }
             break;
 
-        // --- GENERACIÓN DE BOLETA ---
+
         case 'generar_boleta_notas':
             if (isset($data->id_usuario) && isset($data->id_periodo) && isset($data->bimestre) && isset($data->fecha_inicio) && isset($data->fecha_fin)) {
                 $force = isset($data->force) ? $data->force : false;
@@ -241,7 +241,7 @@ try {
             if (isset($data->id_usuario, $data->anio, $data->nivel, $data->bimestre, $data->fecha_inicio, $data->fecha_fin)) {
                 
                 $force = isset($data->force) ? $data->force : false;
-                $ignore = isset($data->ignore_missing) ? $data->ignore_missing : false; // NUEVO
+                $ignore = isset($data->ignore_missing) ? $data->ignore_missing : false;
                 
                 $response = $negocio->generarReporteRendimiento(
                     $data->id_usuario,
@@ -251,7 +251,7 @@ try {
                     $data->fecha_inicio,
                     $data->fecha_fin,
                     $force,
-                    $ignore // PASAMOS LA BANDERA
+                    $ignore
                 );
             } else {
                 $response = ["status" => "error", "message" => "Faltan parámetros"];
@@ -303,7 +303,7 @@ try {
     }
     
 } catch (Throwable $e) {
-    // Captura errores fatales (como memoria insuficiente o sintaxis)
+
     $response = [
         "status" => "error", 
         "message" => "Error Crítico Backend: " . $e->getMessage(),
@@ -312,11 +312,11 @@ try {
     ];
 }
 
-// 3. SALIDA SEGURA
-ob_clean(); // Borrar cualquier echo anterior
+
+ob_clean();
 $json_final = json_encode($response);
 
-// Si json_encode falla (por caracteres raros), devolvemos un error manual
+
 if ($json_final === false) {
     echo json_encode([
         "status" => "error", 

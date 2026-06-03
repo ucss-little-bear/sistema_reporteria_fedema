@@ -10,13 +10,13 @@ class AuthProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
 
-  // Getters para que la Vista pueda leer los datos
+
   Usuario? get usuarioActual => _usuarioActual;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   bool get estaAutenticado => _usuarioActual != null;
 
-  // Función de Login (CU-14)
+
   Future<bool> login(String usuario, String password) async {
     _setLoading(true);
     _errorMessage = null;
@@ -30,11 +30,11 @@ class AuthProvider extends ChangeNotifier {
       if (response.status == 'success' && response.data != null) {
         _usuarioActual = response.data;
         _setLoading(false);
-        return true; // Login exitoso
+        return true;
       } else {
         _errorMessage = response.message ?? 'Error desconocido';
         _setLoading(false);
-        return false; // Login fallido
+        return false;
       }
     } catch (e) {
       _errorMessage = 'Error de conexión: $e';
@@ -43,16 +43,16 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // Función de Logout (limpia el estado)
+
   void logout() {
     _usuarioActual = null;
     _errorMessage = null;
     notifyListeners();
   }
 
-  // Helper interno para actualizar estado de carga y notificar
+
   void _setLoading(bool valor) {
     _isLoading = valor;
-    notifyListeners(); // ¡Esto es lo que actualiza la pantalla!
+    notifyListeners();
   }
 }

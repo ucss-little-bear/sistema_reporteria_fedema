@@ -14,7 +14,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _usuarioController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _isPasswordVisible = false; // Para mostrar/ocultar contraseña
+  bool _isPasswordVisible = false;
 
   @override
   void dispose() {
@@ -61,7 +61,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       backgroundColor: const Color(
         0xFFF1F5F9,
-      ), // Gris azulado muy pálido (Slate 100)
+      ),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -72,12 +72,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(
                   16,
-                ), // Bordes más redondeados
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(
                       0.05,
-                    ), // Sombra sutil y elegante
+                    ),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),
@@ -89,9 +89,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment:
-                      CrossAxisAlignment.center, // Alineación central
+                      CrossAxisAlignment.center,
                   children: [
-                    // Logo / Icono
+
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -106,12 +106,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 24),
 
-                    // Títulos
+
                     Text(
                       'Bienvenido',
                       style: theme.textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w800, // Más peso
-                        color: const Color(0xFF0F172A), // Dark Navy
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF0F172A),
                         letterSpacing: -0.5,
                       ),
                     ),
@@ -125,7 +125,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 40),
 
-                    // Inputs
+
                     TextFormField(
                       controller: _usuarioController,
                       textInputAction: TextInputAction.next,
@@ -139,12 +139,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide
-                              .none, // Sin borde por defecto, estilo moderno
+                              .none,
                         ),
                         filled: true,
                         fillColor: const Color(
                           0xFFF8FAFC,
-                        ), // Fondo input muy suave
+                        ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide(color: Colors.grey.shade200),
@@ -158,7 +158,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       controller: _passwordController,
                       obscureText: !_isPasswordVisible,
                       onFieldSubmitted: (_) =>
-                          _handleLogin(), // Enter para enviar
+                          _handleLogin(),
                       decoration: InputDecoration(
                         labelText: 'Contraseña',
                         prefixIcon: Icon(
@@ -192,16 +192,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const SizedBox(height: 40),
 
-                    // Botón
+
                     SizedBox(
                       width: double.infinity,
-                      height: 50, // Altura fija para botón robusto
+                      height: 50,
                       child: ElevatedButton(
                         onPressed: isLoading ? null : _handleLogin,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: theme.primaryColor, // Azul oscuro
+                          backgroundColor: theme.primaryColor,
                           foregroundColor: Colors.white,
-                          elevation: 0, // Flat design
+                          elevation: 0,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -225,7 +225,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
 
-                    // Pie de página sutil
+
                     const SizedBox(height: 24),
                     Text(
                       'Sistema de Gestión Académica v1.0',

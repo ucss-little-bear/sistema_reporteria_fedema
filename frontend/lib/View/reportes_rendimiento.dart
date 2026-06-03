@@ -4,7 +4,7 @@ import 'package:frontend/Model/Entities/reporte_entity.dart';
 import 'package:frontend/Model/Services/pdf_generator_service.dart';
 import 'package:frontend/Model/Services/reporte_service.dart';
 import 'package:provider/provider.dart';
-import 'package:printing/printing.dart'; // Para descargar/compartir PDF
+import 'package:printing/printing.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 
@@ -22,11 +22,11 @@ class _ReportesRendimientoViewState extends State<ReportesRendimientoView> {
 
   bool _isLoading = true;
 
-  // Datos
+
   List<Reporte> _reportesOriginales = [];
   List<Reporte> _reportesFiltrados = [];
 
-  // Controlador de Búsqueda
+
   final TextEditingController _searchController = TextEditingController();
 
   @override
@@ -42,7 +42,7 @@ class _ReportesRendimientoViewState extends State<ReportesRendimientoView> {
     super.dispose();
   }
 
-  // --- CARGA DE DATOS ---
+
   Future<void> _cargarReportes() async {
     setState(() => _isLoading = true);
     final usuario = Provider.of<AuthProvider>(
@@ -52,15 +52,15 @@ class _ReportesRendimientoViewState extends State<ReportesRendimientoView> {
     if (usuario == null) return;
 
     try {
-      // La Directora (Rol 2) puede ver todo, pero filtramos en frontend
+
       final res = await _service.listarReportes(
         usuario.idUsuario,
         usuario.idRol,
       );
       if (res.status == 'success' && res.data != null) {
-        // FILTROS PARA DIRECTORA:
-        // 1. Solo tipo "Reporte de Rendimiento"
-        // 2. Solo estado "Final" (ID 3) -> Ya completó el flujo
+
+
+
 
         _reportesOriginales = res.data!
             .where(
@@ -70,7 +70,7 @@ class _ReportesRendimientoViewState extends State<ReportesRendimientoView> {
             )
             .toList();
 
-        _filtrarReportes(); // Inicializar lista filtrada
+        _filtrarReportes();
       } else {
         _mostrarError("Error al cargar", detalle: res.message);
       }
@@ -81,15 +81,15 @@ class _ReportesRendimientoViewState extends State<ReportesRendimientoView> {
     }
   }
 
-  // --- LÓGICA DE FILTRADO ---
+
   void _filtrarReportes() {
     String query = _searchController.text.toLowerCase();
 
     setState(() {
       _reportesFiltrados = _reportesOriginales.where((r) {
-        // Construimos string searchable con toda la metadata relevante
-        // Parametros: TITULO | AÑO | NIVEL | BIM | SALONES
-        // Info: (redundante pero útil si hay algo extra)
+
+
+
         String p = r.parametros ?? "";
         String i = r.informacionAdicional ?? "";
         String searchable = "$p $i".toLowerCase();
@@ -99,7 +99,7 @@ class _ReportesRendimientoViewState extends State<ReportesRendimientoView> {
     });
   }
 
-  // --- EXPORTACIÓN ---
+
   Future<void> _exportarPDF(Reporte r) async {
     showDialog(
       context: context,
@@ -110,7 +110,7 @@ class _ReportesRendimientoViewState extends State<ReportesRendimientoView> {
     try {
       final resData = await _service.obtenerDatosPdf(r.idReporte);
       if (resData.status == 'success') {
-        // Generamos el PDF con gráficos y firmas
+
         final bytes = await _pdfService.generarPdf(resData.data!);
         Navigator.pop(context);
 
@@ -126,10 +126,10 @@ class _ReportesRendimientoViewState extends State<ReportesRendimientoView> {
     }
   }
 
-  // --- UTILS DE PARSEO ---
+
   String _obtenerSubtitulo(Reporte r) {
-    // Extraemos datos clave del string de parámetros para mostrar en la tarjeta
-    // Formato: REPORTE RENDIMIENTO | AÑO: 2025 | NIVEL: ... | BIM: 2 | SALONES: ...
+
+
     String params = r.parametros ?? "";
     String anio = "---";
     String nivel = "---";
@@ -151,7 +151,7 @@ class _ReportesRendimientoViewState extends State<ReportesRendimientoView> {
     return "Año $anio • $nivel • Bimestre $bim • $fecha";
   }
 
-  // --- UI ---
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -160,7 +160,7 @@ class _ReportesRendimientoViewState extends State<ReportesRendimientoView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Encabezado
+
           Row(
             children: [
               Text(
@@ -180,7 +180,7 @@ class _ReportesRendimientoViewState extends State<ReportesRendimientoView> {
           ),
           const SizedBox(height: 25),
 
-          // Buscador
+
           TextField(
             controller: _searchController,
             decoration: InputDecoration(
@@ -199,7 +199,7 @@ class _ReportesRendimientoViewState extends State<ReportesRendimientoView> {
           ),
           const SizedBox(height: 20),
 
-          // Contenido
+
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -225,7 +225,7 @@ class _ReportesRendimientoViewState extends State<ReportesRendimientoView> {
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            // Icono Grande
+
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -236,7 +236,7 @@ class _ReportesRendimientoViewState extends State<ReportesRendimientoView> {
             ),
             const SizedBox(width: 16),
 
-            // Información
+
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -258,7 +258,7 @@ class _ReportesRendimientoViewState extends State<ReportesRendimientoView> {
               ),
             ),
 
-            // Acciones
+
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -318,7 +318,7 @@ class _ReportesRendimientoViewState extends State<ReportesRendimientoView> {
     );
   }
 
-  // Método auxiliar para ver PDF sin descargar
+
   Future<void> _verPdfPreview(Reporte r) async {
     showDialog(
       barrierDismissible: false,

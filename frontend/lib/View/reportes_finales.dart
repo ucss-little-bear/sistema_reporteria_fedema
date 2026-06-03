@@ -4,7 +4,7 @@ import 'package:frontend/Model/Entities/reporte_entity.dart';
 import 'package:frontend/Model/Services/pdf_generator_service.dart';
 import 'package:frontend/Model/Services/reporte_service.dart';
 import 'package:provider/provider.dart';
-import 'package:printing/printing.dart'; // Para compartir/descargar PDF
+import 'package:printing/printing.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 
@@ -22,17 +22,17 @@ class _ReportesFinalesViewState extends State<ReportesFinalesView>
 
   bool _isLoading = true;
 
-  // Datos Originales (Sin Filtrar)
+
   List<Reporte> _boletasOriginales = [];
   List<Reporte> _rendimientoOriginales = [];
   List<Reporte> _certificadosOriginales = [];
 
-  // Datos Filtrados (Para mostrar)
+
   Map<String, List<Reporte>> _boletasFiltradasGroup = {};
   List<Reporte> _rendimientoFiltrados = [];
   List<Reporte> _certificadosFiltrados = [];
 
-  // Controladores de Busqueda
+
   final TextEditingController _searchBoletas = TextEditingController();
   final TextEditingController _searchRendimiento = TextEditingController();
   final TextEditingController _searchCertificados = TextEditingController();
@@ -62,7 +62,7 @@ class _ReportesFinalesViewState extends State<ReportesFinalesView>
     super.dispose();
   }
 
-  // --- CARGA DE DATOS ---
+
   Future<void> _cargarReportes() async {
     setState(() => _isLoading = true);
     final usuario = Provider.of<AuthProvider>(
@@ -89,7 +89,7 @@ class _ReportesFinalesViewState extends State<ReportesFinalesView>
             .where((r) => r.tipoReporte == 'Certificado de Estudios')
             .toList();
 
-        // Inicializar filtros
+
         _filtrarBoletas();
         _filtrarRendimiento();
         _filtrarCertificados();
@@ -103,14 +103,14 @@ class _ReportesFinalesViewState extends State<ReportesFinalesView>
     }
   }
 
-  // --- LÓGICA DE FILTRADO ---
+
 
   void _filtrarBoletas() {
     String query = _searchBoletas.text.toLowerCase();
     Map<String, List<Reporte>> agrupado = {};
 
     for (var r in _boletasOriginales) {
-      // Construir string de búsqueda con todos los campos requeridos
+
       String searchable = _construirSearchStringBoleta(r).toLowerCase();
 
       if (searchable.contains(query)) {
@@ -123,10 +123,10 @@ class _ReportesFinalesViewState extends State<ReportesFinalesView>
   }
 
   String _construirSearchStringBoleta(Reporte r) {
-    // Parametros: Alumno, Matricula
-    // Info: Año, Nivel, Grado, Seccion, Bimestre, Docente
+
+
     String p = r.parametros ?? "";
-    String i = r.informacionAdicional ?? ""; // Ya viene con pipes |
+    String i = r.informacionAdicional ?? "";
     return "$p $i";
   }
 
@@ -146,13 +146,13 @@ class _ReportesFinalesViewState extends State<ReportesFinalesView>
     setState(() {
       _certificadosFiltrados = _certificadosOriginales.where((r) {
         String searchable = (r.parametros ?? "")
-            .toLowerCase(); // Nombre, Codigo, Año estan aqui
+            .toLowerCase();
         return searchable.contains(query);
       }).toList();
     });
   }
 
-  // --- LÓGICA DE EXPORTACIÓN ---
+
 
   Future<void> _exportarPDF(Reporte r) async {
     showDialog(
@@ -162,20 +162,20 @@ class _ReportesFinalesViewState extends State<ReportesFinalesView>
     );
 
     try {
-      // 1. Obtener datos completos
+
       final resData = await _service.obtenerDatosPdf(r.idReporte);
 
       if (resData.status == 'success') {
-        // 2. Generar PDF
-        final bytes = await _pdfService.generarPdf(resData.data!);
-        Navigator.pop(context); // Cerrar loader
 
-        // 3. Descargar/Compartir
+        final bytes = await _pdfService.generarPdf(resData.data!);
+        Navigator.pop(context);
+
+
         String nombreArchivo = "${r.tipoReporte}_${r.idReporte}.pdf";
         await Printing.sharePdf(bytes: bytes, filename: nombreArchivo);
 
-        // Opcional: Llamar al backend para marcar como "Exportado" (CU-16) si se requiere cambio de estado
-        // await _service.marcarExportado(r.idReporte);
+
+
       } else {
         Navigator.pop(context);
         _mostrarError("Error datos", detalle: resData.message);
@@ -187,7 +187,7 @@ class _ReportesFinalesViewState extends State<ReportesFinalesView>
   }
 
   Future<void> _exportarGrupoBoletas(String key, List<Reporte> lista) async {
-    // Exportación Masiva (Secuencial)
+
     bool confirm =
         await showDialog(
           context: context,
@@ -214,12 +214,12 @@ class _ReportesFinalesViewState extends State<ReportesFinalesView>
 
     for (var r in lista) {
       await _exportarPDF(r);
-      // Pequeña pausa para no saturar el navegador
+
       await Future.delayed(const Duration(milliseconds: 500));
     }
   }
 
-  // --- UTILS ---
+
   String _parseAlumnoName(Reporte r) {
     final params = r.parametros ?? "";
     if (params.contains("ALUMNO:")) {
@@ -232,7 +232,7 @@ class _ReportesFinalesViewState extends State<ReportesFinalesView>
     return params.split('|')[0];
   }
 
-  // --- UI ---
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -359,7 +359,7 @@ class _ReportesFinalesViewState extends State<ReportesFinalesView>
     ),
   );
 
-  // Estructura común del tab con buscador
+
   Widget _buildTabContent({
     required TextEditingController controller,
     required String hint,
@@ -387,7 +387,7 @@ class _ReportesFinalesViewState extends State<ReportesFinalesView>
     );
   }
 
-  // LISTA BOLETAS AGRUPADAS
+
   Widget _buildBoletasList() {
     if (_boletasFiltradasGroup.isEmpty) return _empty();
 
@@ -397,7 +397,7 @@ class _ReportesFinalesViewState extends State<ReportesFinalesView>
         String key = _boletasFiltradasGroup.keys.elementAt(i);
         List<Reporte> list = _boletasFiltradasGroup[key]!;
 
-        // Parse key for display: AÑO|NIVEL|GRADO|SECCION|BIM|DOCENTE
+
         List<String> p = key.split('|');
         String titulo = p.length > 3 ? "${p[2]} - ${p[3]}" : key;
         String sub = p.length > 5 ? "${p[5]} (${p[4]})" : "";
@@ -461,7 +461,7 @@ class _ReportesFinalesViewState extends State<ReportesFinalesView>
             Colors.blue,
             "Ver",
             () => _verPdf(r),
-          ), // Reutilizamos _verPdf para preview
+          ),
           const SizedBox(width: 10),
           _actionBtnSmall(
             Icons.download,
@@ -474,7 +474,7 @@ class _ReportesFinalesViewState extends State<ReportesFinalesView>
     );
   }
 
-  // LISTA SIMPLE (Rendimiento / Certificados)
+
   Widget _buildSimpleList(List<Reporte> list, IconData icon, Color color) {
     if (list.isEmpty) return _empty();
     return ListView.builder(
@@ -577,7 +577,7 @@ class _ReportesFinalesViewState extends State<ReportesFinalesView>
     ),
   );
 
-  // Reutilizamos _verPdf para la vista previa dentro de esta pantalla (solo lectura)
+
   Future<void> _verPdf(Reporte r) async {
     showDialog(
       barrierDismissible: false,
@@ -599,7 +599,7 @@ class _ReportesFinalesViewState extends State<ReportesFinalesView>
               child: PdfPreview(
                 build: (f) => bytes,
                 allowPrinting: false,
-                allowSharing: false, // Solo vista
+                allowSharing: false,
                 initialPageFormat: PdfPageFormat.a4,
               ),
             ),

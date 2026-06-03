@@ -1,5 +1,5 @@
 <?php
-// Asegurarnos de que conexion.php existe antes de incluirlo
+
 if (!file_exists('Conexion.php')) {
     die(json_encode(["status" => "error", "message" => "Falta conexion.php"]));
 }
@@ -19,14 +19,14 @@ class Negocio {
         }
     }
 
-    // ==========================================
-    // GESTIÓN DE USUARIOS Y AUTENTICACIÓN (CU-14)
-    // ==========================================
+
+
+
 
     public function loginUsuario($usuario, $password) {
         try {
-            // 1. Preparamos la consulta. 
-            // Verifica que los nombres 'Usuario_Sistema', 'nombre_usuario', 'id_rol' sean EXACTOS a tu BD
+
+
             $query = "SELECT u.id_usuario, u.nombres, u.apellidos, u.id_rol, r.descripcion as rol, u.contrasena_hash, u.estado 
                       FROM Usuario_Sistema u 
                       JOIN Rol r ON u.id_rol = r.id_rol 
@@ -36,7 +36,7 @@ class Negocio {
             $stmt->bindParam(":usuario", $usuario);
             
             if (!$stmt->execute()) {
-                // Si falla la ejecución SQL, devolvemos el error exacto de la BD
+
                 $error = $stmt->errorInfo();
                 return ["status" => "error", "message" => "Error SQL: " . $error[2]];
             }
@@ -44,16 +44,16 @@ class Negocio {
             if ($stmt->rowCount() > 0) {
                 $row = $stmt->fetch(PDO::FETCH_ASSOC);
                 
-                // Verificar si el usuario está activo (asumiendo columna 'estado' es int 1 o 0)
+
                 if ($row['estado'] == 0) {
                     return ["status" => "error", "message" => "Usuario inactivo."];
                 }
 
-                // Verificar contraseña
-                // NOTA: Si en tu BD las contraseñas están en texto plano (ej. "123456"), 
-                // cambia password_verify por: if ($password == $row['contrasena_hash']) {
+
+
+
                 if (password_verify($password, $row['contrasena_hash'])) {
-                    // Borramos el hash antes de enviarlo al frontend por seguridad
+
                     unset($row['contrasena_hash']);
                     return ["status" => "success", "data" => $row];
                 } else {
@@ -87,9 +87,9 @@ class Negocio {
         }
     }
 
-    // ==========================================
-    // GESTIÓN DE USUARIOS (CU-15)
-    // ==========================================
+
+
+
 
     public function listarUsuarios() {
         try {
@@ -108,12 +108,12 @@ class Negocio {
 
     public function crearUsuario($nombres, $apellidos, $dni, $usuario, $password, $idRol, $correo) {
         try {
-            // Transacción para atomicidad
+
             $this->conn->beginTransaction();
 
             $hash = password_hash($password, PASSWORD_DEFAULT);
 
-            // A. Insertar en Usuario_Sistema
+
             $query = "INSERT INTO Usuario_Sistema (id_rol, nombres, apellidos, DNI, nombre_usuario, contrasena_hash, correo, estado) 
                       VALUES (:rol, :nom, :ape, :dni, :user, :pass, :correo, 1)";
             
@@ -131,14 +131,14 @@ class Negocio {
                 return ["status" => "error", "message" => "Error al crear usuario en sistema"];
             }
 
-            // B. Sincronización para Docentes (Rol 3)
+
             if ($idRol == 3) {
-                // Verificamos si ya existe un docente con ese DNI
+
                 $stmtCheck = $this->conn->prepare("SELECT id_docente FROM Docente WHERE DNI = ?");
                 $stmtCheck->execute([$dni]);
                 
                 if ($stmtCheck->rowCount() == 0) {
-                    // Si no existe, lo creamos
+
                     $sqlDoc = "INSERT INTO Docente (nombres, apellidos, DNI) VALUES (?, ?, ?)";
                     $stmtDoc = $this->conn->prepare($sqlDoc);
                     if (!$stmtDoc->execute([$nombres, $apellidos, $dni])) {
@@ -146,7 +146,7 @@ class Negocio {
                         return ["status" => "error", "message" => "Error al registrar en tabla Docente"];
                     }
                 } else {
-                    // Si ya existe (quizás inactivo), actualizamos sus datos por si acaso
+
                     $sqlUpdDoc = "UPDATE Docente SET nombres = ?, apellidos = ? WHERE DNI = ?";
                     $stmtUpdDoc = $this->conn->prepare($sqlUpdDoc);
                     $stmtUpdDoc->execute([$nombres, $apellidos, $dni]);
@@ -161,13 +161,13 @@ class Negocio {
         }
     }
 
-    // 2. EDITAR USUARIO (Con sincronización de Docente)
+
     public function editarUsuario($idUsuario, $nombres, $apellidos, $dni, $usuario, $idRol, $correo) {
         try {
             $this->conn->beginTransaction();
 
-            // A. Actualizar Usuario_Sistema
-            // Primero obtenemos el DNI anterior por si cambió, para buscar al docente correcto
+
+
             $stmtOld = $this->conn->prepare("SELECT DNI FROM Usuario_Sistema WHERE id_usuario = ?");
             $stmtOld->execute([$idUsuario]);
             $oldDni = $stmtOld->fetchColumn();
@@ -190,36 +190,36 @@ class Negocio {
                 return ["status" => "error", "message" => "No se pudo actualizar el usuario"];
             }
 
-            // B. Sincronización para Docentes (Rol 3)
+
             if ($idRol == 3) {
-                // Buscamos si existe el docente por el DNI (nuevo o viejo)
-                // Usamos el $dni nuevo para buscar o crear
+
+
                 $stmtCheck = $this->conn->prepare("SELECT id_docente FROM Docente WHERE DNI = ?");
                 $stmtCheck->execute([$dni]);
                 
                 if ($stmtCheck->rowCount() > 0) {
-                    // Si existe con el DNI actual, actualizamos nombres
+
                     $sqlDoc = "UPDATE Docente SET nombres = ?, apellidos = ? WHERE DNI = ?";
                     $stmtDoc = $this->conn->prepare($sqlDoc);
                     $stmtDoc->execute([$nombres, $apellidos, $dni]);
                 } else {
-                    // Si NO existe con el DNI nuevo, buscamos con el DNI viejo
+
                     if ($oldDni && $oldDni != $dni) {
                         $stmtCheckOld = $this->conn->prepare("SELECT id_docente FROM Docente WHERE DNI = ?");
                         $stmtCheckOld->execute([$oldDni]);
                         if ($stmtCheckOld->rowCount() > 0) {
-                            // Existe con el viejo, actualizamos TODO (incluido el DNI nuevo)
+
                             $sqlDoc = "UPDATE Docente SET nombres = ?, apellidos = ?, DNI = ? WHERE DNI = ?";
                             $stmtDoc = $this->conn->prepare($sqlDoc);
                             $stmtDoc->execute([$nombres, $apellidos, $dni, $oldDni]);
                         } else {
-                            // No existe ni con viejo ni nuevo -> Lo creamos
+
                             $sqlDoc = "INSERT INTO Docente (nombres, apellidos, DNI) VALUES (?, ?, ?)";
                             $stmtDoc = $this->conn->prepare($sqlDoc);
                             $stmtDoc->execute([$nombres, $apellidos, $dni]);
                         }
                     } else {
-                        // Es un docente nuevo (o cambio de rol a docente) -> Crear
+
                         $sqlDoc = "INSERT INTO Docente (nombres, apellidos, DNI) VALUES (?, ?, ?)";
                         $stmtDoc = $this->conn->prepare($sqlDoc);
                         $stmtDoc->execute([$nombres, $apellidos, $dni]);
@@ -251,9 +251,9 @@ class Negocio {
         }
     }
 
-    // ==========================================
-    // IMPORTACIÓN DE DATOS SIAGIE (CU-01, CU-02)
-    // ==========================================
+
+
+
 
     public function registrarArchivoSIAGIE($tipoArchivo, $nombre, $ruta, $idUsuario) {
         try {
@@ -275,9 +275,9 @@ class Negocio {
         }
     }
 
-    // ==========================================
-    // GESTIÓN DE REPORTES (CU-03 al CU-13)
-    // ==========================================
+
+
+
 
     public function crearReporte($idUsuario, $tipoReporte, $parametros, $ruta) {
         try {
@@ -303,7 +303,7 @@ class Negocio {
     }
 
     public function listarReportes($idUsuario = null, $idRol = null) {
-        // Base de la consulta
+
         $sql = "SELECT 
                     h.id_reporte,
                     h.id_tipo_reporte,
@@ -324,42 +324,42 @@ class Negocio {
                 JOIN Estado_Reporte e ON h.id_estado_reporte = e.id_estado_reporte
                 JOIN Usuario_Sistema u ON h.id_usuario = u.id_usuario";
 
-        // FILTROS DE SEGURIDAD
-        // Si es Docente (Rol 3), solo ve reportes donde él sea el 'generador' O
-        // donde el reporte le pertenezca (Aquí asumimos que el docente GENERA sus reportes o 
-        // se le asignan. Como en tu flujo la Secretaría genera todo, necesitamos un criterio para 
-        // vincular la boleta al docente).
+
+
+
+
+
         
-        // CRITERIO CORREGIDO PARA DOCENTES:
-        // Las boletas se generan con 'informacion_adicional' que tiene el nombre del docente al final.
-        // PERO, lo más robusto es filtrar por el ID de usuario si guardamos quién es el dueño.
-        // 
-        // IMPORTANTE: En tu flujo actual, la SECRETARÍA (id_usuario X) genera el reporte.
-        // Entonces en la tabla Historial_Reporte, id_usuario = Secretaria.
-        // El Docente NO es el dueño del registro.
-        //
-        // SOLUCIÓN: Filtrar por el nombre del docente que guardamos en 'informacion_adicional' 
-        // O hacer un JOIN más complejo con Periodo.
-        //
-        // DADO QUE YA TENEMOS EL NOMBRE DEL DOCENTE EN 'informacion_adicional' (lo agregamos antes):
-        // Podemos buscar si el nombre del usuario actual está contenido en ese campo.
+
+
+
+
+
+
+
+
+
+
+
+
+
         
-        if ($idRol == 3) { // Docente
-            // Obtenemos el nombre del docente actual para filtrar
+        if ($idRol == 3) {
+
             $stmtU = $this->conn->prepare("SELECT CONCAT(apellidos, ', ', nombres) as nombre_completo FROM Usuario_Sistema WHERE id_usuario = ?");
             $stmtU->execute([$idUsuario]);
             $nombreDocente = $stmtU->fetchColumn();
             
-            // Filtramos donde la informacion_adicional contenga su nombre
-            // OJO: Esto asume que el nombre está escrito igual. 
-            // Si prefieres algo más estricto, deberíamos haber guardado el ID_DOCENTE en una columna extra.
-            // Por ahora, usaremos el filtro de texto que es lo que tenemos a mano sin alterar tablas.
+
+
+
+
             
-            // Agregamos WHERE
+
             $sql .= " WHERE h.informacion_adicional LIKE '%$nombreDocente%'";
         }
         
-        // Si es Directora o Secretaría, ven todo (no agregamos WHERE)
+
 
         $sql .= " ORDER BY h.fecha_generacion DESC";
 
@@ -387,28 +387,28 @@ class Negocio {
         try {
             $firma = $this->generarEstampaFirma($idUsuario);
             
-            // Determinar qué campo actualizar y el nuevo estado según el rol
+
             $campoFirma = "";
             $nuevoEstado = 0;
 
-            // Lógica de Flujo de Estados
-            // 1 (Generado) -> Directora firma -> 2 (Revisado)
-            // 2 (Revisado) -> Secretaria firma -> 3 (Final) O 5 (Firmado - para boletas)
-            // 5 (Firmado) -> Docente firma -> 3 (Final)
+
+
+
+
 
             $stmtTipo = $this->conn->prepare("SELECT id_tipo_reporte FROM Historial_Reporte WHERE id_reporte = ?");
             $stmtTipo->execute([$idReporte]);
             $tipoReporte = $stmtTipo->fetchColumn();
 
-            if ($idRol == 2) { // Directora
+            if ($idRol == 2) {
                 $campoFirma = "firma_directora";
-                $nuevoEstado = 2; // Pasa a Revisado
-            } elseif ($idRol == 1) { // Secretaría
+                $nuevoEstado = 2;
+            } elseif ($idRol == 1) {
                 $campoFirma = "firma_secretaria";
                 $nuevoEstado = ($tipoReporte == 1) ? 5 : 3; 
-            } elseif ($idRol == 3) { // Docente
+            } elseif ($idRol == 3) {
                 $campoFirma = "firma_docente";
-                $nuevoEstado = 3; // Final
+                $nuevoEstado = 3;
             } else {
                 return ["status" => "error", "message" => "Rol no autorizado para firmar."];
             }
@@ -435,13 +435,13 @@ class Negocio {
             $campoFirma = "";
             $nuevoEstado = 0;
 
-            if ($idRol == 2) { // Directora
+            if ($idRol == 2) {
                 $campoFirma = "firma_directora";
                 $nuevoEstado = 2;
-            } elseif ($idRol == 1) { // Secretaría
+            } elseif ($idRol == 1) {
                 $campoFirma = "firma_secretaria";
                 $nuevoEstado = 5; 
-            } elseif ($idRol == 3) { // Docente
+            } elseif ($idRol == 3) {
                 $campoFirma = "firma_docente";
                 $nuevoEstado = 3;
             }
@@ -515,7 +515,7 @@ class Negocio {
                 return ["status" => "error", "message" => "Faltan datos de Asistencia."];
             }
 
-            // Usamos sanitizarTexto (QUE AHORA RESPETA LA Ñ)
+
             $seccion = mb_substr($this->sanitizarTexto($seccionRaw ?? 'U'), 0, 50, 'UTF-8');
             $grado = mb_substr($this->sanitizarTexto($gradoRaw ?? 'U'), 0, 50, 'UTF-8');
             $nivel = $nivelRaw ? mb_substr($this->sanitizarTexto($nivelRaw), 0, 50, 'UTF-8') : 'IMPORTADO';
@@ -592,9 +592,9 @@ class Negocio {
         }
     }
 
-    // ==============================================================
-    // 3. PROCESAR NOTAS SIAGIE
-    // ==============================================================
+
+
+
     public function procesarNotasExcel($hojas, $nombreArchivo, $idUsuario, $idDocenteSeleccionado = null, $forceUpload = false) {
         try {
             mb_internal_encoding("UTF-8");
@@ -605,7 +605,7 @@ class Negocio {
 
             $anio = $datosGen['anio'];
             
-            // Sanitización que respeta Ñ
+
             $grado = mb_substr($this->sanitizarTexto($datosGen['grado']), 0, 50, 'UTF-8');
             $seccion = mb_substr($this->sanitizarTexto($datosGen['seccion']), 0, 50, 'UTF-8');
             $nivel = $datosGen['nivel'] ? mb_substr($this->sanitizarTexto($datosGen['nivel']), 0, 50, 'UTF-8') : 'IMPORTADO';
@@ -659,9 +659,9 @@ class Negocio {
             throw $e;
         }
     }
-    // ==============================================================
-    // 4. FUNCIONES AUXILIARES
-    // ==============================================================
+
+
+
     
     private function limpiarTexto($cadena) {
         if ($cadena === null) return "";
@@ -681,7 +681,7 @@ class Negocio {
         return null;
     }
     
-    // CAMBIO: Ahora acepta $nivel
+
     private function gestionarPeriodo($anio, $grado, $seccion, $nivel, $idDocenteSeleccionado) {
         $sqlPer = "SELECT id_periodo FROM Periodo WHERE año_lectivo = ? AND seccion = ? AND grado = ? LIMIT 1";
         $stmtPer = $this->conn->prepare($sqlPer);
@@ -698,7 +698,7 @@ class Negocio {
                 "data" => ["grado" => $grado, "seccion" => $seccion, "anio" => $anio, "docentes" => $docentes]
             ];
         } else {
-            // NUEVO: Insertamos el nivel real
+
             $stmtInsPer = $this->conn->prepare("INSERT INTO Periodo (id_docente, año_lectivo, nivel, grado, seccion) VALUES (?, ?, ?, ?, ?)");
             $stmtInsPer->execute([$idDocenteSeleccionado, $anio, $nivel, $grado, $seccion]);
             return $this->conn->lastInsertId();
@@ -707,8 +707,8 @@ class Negocio {
 
     private function listarDocentesParaSelect() {
         try {
-            // MODIFICACIÓN: Hacemos JOIN con Usuario_Sistema usando el DNI
-            // y filtramos donde estado = 1 (Activo)
+
+
             $sql = "SELECT d.id_docente, CONCAT(d.nombres, ' ', d.apellidos) as nombre_completo 
                     FROM Docente d
                     JOIN Usuario_Sistema u ON d.DNI = u.DNI
@@ -718,7 +718,7 @@ class Negocio {
             $stmt = $this->conn->query($sql);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
-            return []; // Retornar lista vacía en caso de error para no romper el flujo
+            return [];
         }
     }
 
@@ -769,7 +769,7 @@ class Negocio {
         return 1;
     }
 
-    // CAMBIO: Agregado 'nivel' a los datos extraídos
+
     private function extraerGeneralidades($hojas) {
         $datos = ['anio'=>null, 'grado'=>null, 'seccion'=>null, 'bimestre'=>null, 'nivel'=>null, 'mapaCursos'=>[]];
         
@@ -787,7 +787,7 @@ class Negocio {
                 if (strpos($val, 'SECCION') !== false && !$datos['seccion']) $datos['seccion'] = $this->buscarValorEnCeldasAdyacentes($fila, $idx);
                 if (strpos($val, 'PERIODO DE EV') !== false && !$datos['bimestre']) $datos['bimestre'] = $this->buscarValorEnCeldasAdyacentes($fila, $idx);
                 
-                // NUEVO: Buscar Nivel en Notas
+
                 if (strpos($val, 'NIVEL') !== false && !$datos['nivel']) $datos['nivel'] = $this->buscarValorEnCeldasAdyacentes($fila, $idx);
 
                 if (preg_match('/^(\d+):/', $val, $matches)) {
@@ -877,7 +877,7 @@ class Negocio {
         return $count;
     }
 
-    // CAMBIO: Ahora acepta $nivel y lo guarda
+
     private function obtenerIdCurso($nombre, $grado, $nivel) {
         $stmt = $this->conn->prepare("SELECT id_curso FROM Curso WHERE nombre_curso = ? LIMIT 1");
         $stmt->execute([$nombre]);
@@ -901,13 +901,13 @@ class Negocio {
         return $this->conn->lastInsertId();
     }
 
-    // 1. OBTENER AÑOS (Solo de periodos existentes)
+
     public function listarAniosReporte() {
         $sql = "SELECT DISTINCT año_lectivo FROM Periodo ORDER BY año_lectivo DESC";
         return $this->conn->query($sql)->fetchAll(PDO::FETCH_COLUMN);
     }
 
-    // 2. OBTENER NIVELES (Filtrado por Año)
+
     public function listarNivelesReporte($anio) {
         $sql = "SELECT DISTINCT nivel FROM Periodo WHERE año_lectivo = ? ORDER BY nivel";
         $stmt = $this->conn->prepare($sql);
@@ -915,9 +915,9 @@ class Negocio {
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
     }
 
-    // 3. OBTENER SALONES (Filtrado por Año y Nivel)
+
     public function listarSalonesReporte($anio, $nivel) {
-        // Devolvemos ID y Descripción
+
         $sql = "SELECT id_periodo, CONCAT(grado, ' - ', seccion) as nombre 
                 FROM Periodo WHERE año_lectivo = ? AND nivel = ? ORDER BY grado, seccion";
         $stmt = $this->conn->prepare($sql);
@@ -925,9 +925,9 @@ class Negocio {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // 4. OBTENER BIMESTRES (Filtrado por Salón/Periodo existente en Calificaciones)
+
     public function listarBimestresReporte($idPeriodo) {
-        // Solo mostramos bimestres que tengan notas registradas
+
         $sql = "SELECT DISTINCT c.bimestre 
                 FROM Calificacion c
                 JOIN Historial_Academico h ON c.id_historial = h.id_historial
@@ -938,15 +938,15 @@ class Negocio {
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
     }
 
-    // ==============================================================
-    // GENERAR BOLETAS DE NOTAS (Lógica Maestra)
-    // ==============================================================
+
+
+
     public function generarBoletaNotas($idUsuario, $idPeriodo, $bimestre, $fechaInicio, $fechaFin, $force = false) {
         try {
             $this->conn->beginTransaction();
             
-            // 1. OBTENEMOS DATOS DEL PERIODO Y DEL DOCENTE
-            // Hacemos JOIN con Docente para obtener su nombre
+
+
             $sqlInfo = "SELECT p.año_lectivo, p.nivel, p.grado, p.seccion, 
                                CONCAT(d.apellidos, ', ', d.nombres) as docente
                         FROM Periodo p
@@ -961,12 +961,12 @@ class Negocio {
                 return ["status" => "error", "message" => "Periodo no encontrado"];
             }
 
-            // Construimos la info adicional incluyendo el docente al final
-            // Formato: AÑO|NIVEL|GRADO|SECCION|BIMESTRE|DOCENTE
+
+
             $docente = $pData['docente'] ?? 'Por Asignar';
             $infoAd = "{$pData['año_lectivo']}|{$pData['nivel']}|{$pData['grado']}|{$pData['seccion']}|B$bimestre|$docente";
 
-            // 2. VERIFICAR DUPLICADOS
+
             if (!$force) {
                 $stmtCheck = $this->conn->prepare("SELECT COUNT(*) FROM Historial_Reporte WHERE id_tipo_reporte = 1 AND informacion_adicional = ?");
                 $stmtCheck->execute([$infoAd]);
@@ -976,20 +976,20 @@ class Negocio {
                 $stmtDel->execute([$infoAd]);
             }
 
-            // 3. OBTENER ALUMNOS
+
             $stmtAl = $this->conn->prepare("SELECT e.id_estudiante, e.nombres, e.apellidos, e.codigo_matricula, h.id_historial FROM Estudiante e JOIN Historial_Academico h ON e.id_estudiante = h.id_estudiante WHERE h.id_periodo = ? AND e.codigo_matricula IS NOT NULL AND e.codigo_matricula != ''");
             $stmtAl->execute([$idPeriodo]);
             $alumnos = $stmtAl->fetchAll(PDO::FETCH_ASSOC);
             if (empty($alumnos)) return ["status" => "error", "message" => "No hay alumnos con matrícula."];
 
-            // 4. VERIFICAR ASISTENCIA (Opcional, para no generar boletas vacías)
-            // Se mantiene tu lógica original aquí...
+
+
 
             $gen = 0;
             foreach ($alumnos as $al) {
                 $idH = $al['id_historial'];
                 
-                // QUERY SQL QUE SE GUARDARÁ EN LA BD (Tu query optimizada)
+
                 $query = "
                     SELECT 
                         cur.nombre_curso, 
@@ -1006,7 +1006,7 @@ class Negocio {
                     ORDER BY cur.nombre_curso, com.nombre_competencia
                 ";
 
-                // Parametros visuales
+
                 $param = "Alumno: {$al['apellidos']}, {$al['nombres']} | Matrícula: {$al['codigo_matricula']}";
                 
                 $stmtIns = $this->conn->prepare("INSERT INTO Historial_Reporte (id_usuario, id_tipo_reporte, id_estado_reporte, fecha_generacion, parametros, ruta_archivo, informacion_adicional) VALUES (?, 1, 1, NOW(), ?, ?, ?)");
@@ -1035,12 +1035,12 @@ class Negocio {
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
     }
 
-    // 2. GENERAR REPORTE DE RENDIMIENTO (CON VALIDACIONES)
+
     public function generarReporteRendimiento($idUsuario, $anio, $nivel, $bimestre, $fechaInicio, $fechaFin, $forceOverwrite = false, $ignoreMissing = false) {
         try {
             $this->conn->beginTransaction();
 
-            // A. Validación Salones
+
             $sqlSalones = "SELECT id_periodo, CONCAT(grado, ' ', seccion) as nombre FROM Periodo WHERE año_lectivo = ? AND nivel = ?";
             $stmtS = $this->conn->prepare($sqlSalones);
             $stmtS->execute([$anio, $nivel]);
@@ -1074,7 +1074,7 @@ class Negocio {
 
             if (empty($salonesIncluidos)) return ["status" => "error", "message" => "Ningún salón tiene notas."];
 
-            // B. Duplicados
+
             $listaSalonesStr = implode(", ", $salonesIncluidos);
             if (strlen($listaSalonesStr) > 100) $listaSalonesStr = substr($listaSalonesStr, 0, 97) . "...";
             $identificador = "REPORTE RENDIMIENTO | AÑO: $anio | NIVEL: $nivel | BIM: $bimestre";
@@ -1088,10 +1088,10 @@ class Negocio {
                 $stmtDel->execute([$identificador . '%']);
             }
 
-            // C. SQL (SIN MINIFICAR PARA EVITAR ERRORES DE ESPACIOS)
+
             $strSalonesFull = implode(", ", $salonesIncluidos);
             
-            // IMPORTANTE: Usamos saltos de línea reales, NO usar preg_replace aquí
+
             $queryRendimiento = "
                 SELECT 
                     '$strSalonesFull' as salones_reportados,
@@ -1139,9 +1139,9 @@ class Negocio {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // 2. VALIDAR REQUISITOS DEL ESTUDIANTE (Bimestres Mínimos)
+
     public function validarRequisitosCertificado($idEstudiante, $idPeriodo) {
-        // Contar cuántos bimestres únicos tiene con notas este alumno
+
         $sql = "SELECT COUNT(DISTINCT bimestre) 
                 FROM Calificacion c
                 JOIN Historial_Academico h ON c.id_historial = h.id_historial
@@ -1150,13 +1150,13 @@ class Negocio {
         $stmt->execute([$idEstudiante, $idPeriodo]);
         $bimestres = $stmt->fetchColumn();
 
-        // Obtener datos del grado para buscar salones hermanos
+
         $sqlPer = "SELECT grado, nivel, año_lectivo FROM Periodo WHERE id_periodo = ?";
         $stmtPer = $this->conn->prepare($sqlPer);
         $stmtPer->execute([$idPeriodo]);
         $pData = $stmtPer->fetch(PDO::FETCH_ASSOC);
 
-        // Buscar otros salones del mismo grado
+
         $sqlHermanos = "SELECT CONCAT(grado, ' - ', seccion) as nombre, id_periodo 
                         FROM Periodo 
                         WHERE año_lectivo = ? AND nivel = ? AND grado = ? AND id_periodo != ?";
@@ -1165,7 +1165,7 @@ class Negocio {
         $salonesHermanos = $stmtH->fetchAll(PDO::FETCH_ASSOC);
 
         $advertencias = [];
-        // Verificar si los hermanos tienen data (aprox)
+
         foreach ($salonesHermanos as $hermano) {
             $sqlCheck = "SELECT COUNT(*) FROM Calificacion c JOIN Historial_Academico h ON c.id_historial = h.id_historial WHERE h.id_periodo = ?";
             $stmtC = $this->conn->prepare($sqlCheck);
@@ -1184,19 +1184,19 @@ class Negocio {
         ];
     }
 
-    // 3. GENERAR CERTIFICADO (Cálculo de Ranking)
+
     public function generarCertificadoEstudios($idUsuario, $idEstudiante, $idPeriodo, $anio, $force = false) {
         try {
             $this->conn->beginTransaction();
             
-            // 1. Datos Alumno
+
             $stmtData = $this->conn->prepare("SELECT UPPER(TRIM(p.grado)) as grado, UPPER(TRIM(p.nivel)) as nivel, UPPER(TRIM(p.seccion)) as seccion, e.codigo_matricula, UPPER(TRIM(CONCAT(e.apellidos, ', ', e.nombres))) as alumno FROM Periodo p JOIN Historial_Academico h ON p.id_periodo = h.id_periodo JOIN Estudiante e ON h.id_estudiante = e.id_estudiante WHERE h.id_estudiante = ? AND h.id_periodo = ?");
             $stmtData->execute([$idEstudiante, $idPeriodo]);
             $alumnoData = $stmtData->fetch(PDO::FETCH_ASSOC);
             if (!$alumnoData) return ["status" => "error", "message" => "Alumno no encontrado."];
             $grado = $alumnoData['grado']; $nivel = $alumnoData['nivel'];
 
-            // 2. RANKING CON ESTRATEGIA DE SUBCONSULTAS Y VARIABLES (Tu SQL probado)
+
             $sqlRanking = "
                 SELECT r.puesto, r.total
                 FROM (
@@ -1240,7 +1240,7 @@ class Negocio {
             ";
             
             $stmtRank = $this->conn->prepare($sqlRanking);
-            // Parámetros duplicados porque la subconsulta los pide de nuevo (Promedio + Conteo Total + ID Alumno)
+
             $stmtRank->execute([$anio, $nivel, $grado, $anio, $nivel, $grado, $idEstudiante]);
             $rankData = $stmtRank->fetch(PDO::FETCH_ASSOC);
 
@@ -1254,13 +1254,13 @@ class Negocio {
             else if ($puesto <= ceil($total / 5)) $merito = "Quinto Superior";
             else if ($puesto <= ceil($total / 3)) $merito = "Tercio Superior";
 
-            // 3. Duplicados - *** MODIFICACIÓN AQUÍ: INCLUIMOS EL NOMBRE EN EL PARÁMETRO PARA EL FRONTEND ***
-            // El campo parametros es lo que se muestra en la lista de la app
+
+
             $parametros = "CERTIFICADO | AÑO: $anio | ALUMNO: {$alumnoData['alumno']} | COD: {$alumnoData['codigo_matricula']}";
             
             if (!$force) {
-                // Ojo: al cambiar el string de parametros, el LIKE del control de duplicados debe ser más flexible o buscar por código
-                // Usamos % para buscar si ya existe un certificado de ese estudiante ese año
+
+
                 $searchParam = "%CERTIFICADO%AÑO: $anio%COD: {$alumnoData['codigo_matricula']}%";
                 $stmtCheck = $this->conn->prepare("SELECT COUNT(*) FROM Historial_Reporte WHERE id_tipo_reporte = 3 AND parametros LIKE ?");
                 $stmtCheck->execute([$searchParam]);
@@ -1271,7 +1271,7 @@ class Negocio {
                 $stmtDel->execute([$searchParam]);
             }
 
-            // 4. SQL PDF
+
             $queryCertificado = "SELECT '{$alumnoData['alumno']}' as alumno, '{$alumnoData['codigo_matricula']}' as codigo, '$grado' as grado, '$nivel' as nivel, '{$alumnoData['seccion']}' as seccion, '$puesto' as puesto_obtenido, '$total' as total_alumnos_grado, '$merito' as merito_alcanzado, cur.nombre_curso, (SELECT CASE ROUND(AVG(CASE WHEN c2.nota_competencia LIKE '%AD%' THEN 4 WHEN c2.nota_competencia LIKE '%A%' AND c2.nota_competencia NOT LIKE '%AD%' THEN 3 WHEN c2.nota_competencia LIKE '%B%' THEN 2 ELSE 1 END)) WHEN 4 THEN 'AD' WHEN 3 THEN 'A' WHEN 2 THEN 'B' ELSE 'C' END FROM Calificacion c2 JOIN Historial_Academico h2 ON c2.id_historial = h2.id_historial JOIN Competencia com2 ON c2.id_competencia = com2.id_competencia WHERE h2.id_estudiante = $idEstudiante AND com2.id_curso = cur.id_curso) as nota_final_curso FROM Curso cur WHERE UPPER(TRIM(cur.grado)) = '$grado' AND UPPER(TRIM(cur.nivel)) = '$nivel' ORDER BY cur.nombre_curso";
             $queryCertificado = preg_replace('/\s+/', ' ', $queryCertificado);
             
@@ -1293,7 +1293,7 @@ class Negocio {
 
 
     private function limpiarTextoBusqueda($cadena) {
-        // Solo limpia para BUSCAR etiquetas (Mantiene espacios originales)
+
         if ($cadena === null) return "";
         $cadena = mb_strtoupper(trim($cadena), 'UTF-8');
         $originales = ['Á', 'É', 'Í', 'Ó', 'Ú', 'Ñ'];
@@ -1301,19 +1301,19 @@ class Negocio {
         return str_replace($originales, $reemplazos, $cadena);
     }
 
-    // NUEVA: Función Maestra para limpiar valores a guardar
-    // Elimina espacios dobles, tildes y convierte a mayúsculas
+
+
     private function sanitizarTexto($cadena) {
         if ($cadena === null) return "";
         
-        // 1. Convertir a Mayúsculas UTF-8
+
         $cadena = mb_strtoupper(trim($cadena), 'UTF-8');
         
-        // 2. Quitar espacios dobles
+
         $cadena = preg_replace('/\s+/', ' ', $cadena);
         
-        // 3. Quitar tildes (SOLO VOCALES, NO LA Ñ)
-        // ¡AQUÍ ESTABA EL ERROR ANTES!
+
+
         $originales = ['Á', 'É', 'Í', 'Ó', 'Ú'];
         $reemplazos = ['A', 'E', 'I', 'O', 'U'];
         
@@ -1364,8 +1364,8 @@ class Negocio {
         $stmt = $this->conn->prepare($sql);
         $stmt->execute([$idUsuario]);
         
-        // CORRECCIÓN CLAVE: Convertimos todas las claves a minúsculas
-        // Esto asegura que $u['dni'] funcione aunque la BD devuelva 'DNI'
+
+
         $raw = $stmt->fetch(PDO::FETCH_ASSOC);
         
         if (!$raw) return "Firma Inválida (Usuario no encontrado)";

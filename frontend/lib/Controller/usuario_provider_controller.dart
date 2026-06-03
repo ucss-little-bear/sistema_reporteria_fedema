@@ -36,7 +36,7 @@ class UsuarioProvider extends ChangeNotifier {
     final response = await _service.crearUsuario(datos);
 
     if (response.status == 'success') {
-      await cargarUsuarios(); // Recargar lista
+      await cargarUsuarios();
       return true;
     } else {
       _errorMessage = response.message;
@@ -53,7 +53,7 @@ class UsuarioProvider extends ChangeNotifier {
     final response = await _service.editarUsuario(datos);
 
     if (response.status == 'success') {
-      await cargarUsuarios(); // Recargar lista para ver cambios
+      await cargarUsuarios();
       return true;
     } else {
       _errorMessage = response.message;
@@ -64,7 +64,7 @@ class UsuarioProvider extends ChangeNotifier {
   }
 
   Future<bool> cambiarEstado(int idUsuario, int estadoActual) async {
-    // Invertir estado (Si es 1 pasa a 0, si es 0 pasa a 1)
+
     int nuevoEstado = estadoActual == 1 ? 0 : 1;
 
     final response = await _service.cambiarEstado(idUsuario, nuevoEstado);
