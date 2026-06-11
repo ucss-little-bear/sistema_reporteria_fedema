@@ -82,6 +82,48 @@ class _MainLayoutState extends State<MainLayout> {
     );
   }
 
+  void _showNotificationsPreview(BuildContext context, String roleName) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        backgroundColor: Colors.white,
+        title: Row(
+          children: [
+            Icon(
+              Icons.notifications_none,
+              color: Theme.of(context).primaryColor,
+            ),
+            const SizedBox(width: 10),
+            const Text(
+              "Avisos dinámicos",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        content: Text(
+          "Campana visual agregada para el rol: $roleName.\n\n"
+          "En una siguiente iteración se conectará con los estados de reportes "
+          "y boletas para mostrar acciones pendientes.",
+          style: const TextStyle(color: Colors.black87),
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).primaryColor,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text("Entendido"),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final usuario = context.watch<AuthProvider>().usuarioActual;
@@ -190,19 +232,19 @@ class _MainLayoutState extends State<MainLayout> {
       _selectedIndex = 0;
     }
 
+    final currentTitle = menuItems[_selectedIndex]['title'] as String;
+    final roleName = usuario.rolDescripcion ?? "Usuario";
+
     return Scaffold(
       body: Row(
         children: [
-
           AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             width: _isSidebarExpanded ? 260 : 70,
             color: theme.primaryColor,
             child: Column(
               children: [
-
                 Padding(
-
                   padding: _isSidebarExpanded
                       ? const EdgeInsets.fromLTRB(24, 24, 16, 20)
                       : const EdgeInsets.symmetric(vertical: 24),
@@ -261,15 +303,12 @@ class _MainLayoutState extends State<MainLayout> {
                     onPressed: () => setState(() => _isSidebarExpanded = true),
                   ),
 
-
                 if (_isSidebarExpanded) ...[
                   Container(
-                    width: double
-                        .infinity,
+                    width: double.infinity,
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment
-                          .center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Text(
                           "Hola, ${usuario.nombres.split(' ')[0]}",
@@ -285,13 +324,9 @@ class _MainLayoutState extends State<MainLayout> {
                             vertical: 3,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(
-                              0.1,
-                            ),
+                            color: Colors.white.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: Colors.white12,
-                            ),
+                            border: Border.all(color: Colors.white12),
                           ),
                           child: Text(
                             usuario.rolDescripcion ?? "Usuario",
@@ -311,7 +346,6 @@ class _MainLayoutState extends State<MainLayout> {
 
                 const Divider(color: Colors.white10, height: 1),
                 const SizedBox(height: 8),
-
 
                 Expanded(
                   child: ListView.builder(
@@ -385,11 +419,7 @@ class _MainLayoutState extends State<MainLayout> {
 
                 const Divider(color: Colors.white10, height: 1),
 
-
                 Padding(
-
-
-
                   padding: EdgeInsets.all(_isSidebarExpanded ? 16 : 8),
                   child: _LogoutButton(
                     isExpanded: _isSidebarExpanded,
@@ -400,12 +430,46 @@ class _MainLayoutState extends State<MainLayout> {
             ),
           ),
 
-
           Expanded(
             child: Container(
               color: const Color(0xFFF5F6FA),
               child: Column(
                 children: [
+                  Container(
+                    height: 72,
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      border: Border(
+                        bottom: BorderSide(color: Color(0xFFE5E7EB)),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            currentTitle,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1F2937),
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Tooltip(
+                          message: "Avisos dinámicos",
+                          child: IconButton(
+                            icon: const Icon(Icons.notifications_none),
+                            color: theme.primaryColor,
+                            iconSize: 28,
+                            onPressed: () =>
+                                _showNotificationsPreview(context, roleName),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.all(32.0),
@@ -421,7 +485,6 @@ class _MainLayoutState extends State<MainLayout> {
     );
   }
 }
-
 
 class _LogoutButton extends StatefulWidget {
   final bool isExpanded;
@@ -457,12 +520,10 @@ class _LogoutButtonState extends State<_LogoutButton> {
                 : null,
           ),
           child: Row(
-
             mainAxisAlignment: widget.isExpanded
                 ? MainAxisAlignment.start
                 : MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize
-                .min,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
                 Icons.logout,
@@ -472,7 +533,6 @@ class _LogoutButtonState extends State<_LogoutButton> {
               if (widget.isExpanded) ...[
                 const SizedBox(width: 12),
                 Flexible(
-
                   child: Text(
                     "Cerrar Sesión",
                     style: TextStyle(
