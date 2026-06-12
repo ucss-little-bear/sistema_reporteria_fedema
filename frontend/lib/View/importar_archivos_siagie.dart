@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart' as file_picker;
+import 'package:desktop_drop/desktop_drop.dart';
 import 'package:frontend/Controller/auth_provider_controller.dart';
 import 'package:frontend/Model/Services/reporte_service.dart';
-
 import 'package:provider/provider.dart';
 
 class ImportarArchivosView extends StatefulWidget {
@@ -16,6 +16,7 @@ class _ImportarArchivosViewState extends State<ImportarArchivosView> {
   String? _tipoArchivoSeleccionado;
   file_picker.PlatformFile? _archivoSeleccionado;
   bool _isUploading = false;
+  bool _isDragging = false; 
   final ReporteService _reporteService = ReporteService();
 
   final List<Map<String, dynamic>> _tiposArchivo = [
@@ -80,7 +81,6 @@ class _ImportarArchivosViewState extends State<ImportarArchivosView> {
     }
   }
 
-
   Future<void> _procesarAsistenciaExcel(
     int idUsuario, {
     int? idDocenteForzado,
@@ -116,7 +116,6 @@ class _ImportarArchivosViewState extends State<ImportarArchivosView> {
       _mostrarModalSeleccionDocente(
         dataMap['docentes'],
         "${dataMap['grado']} - ${dataMap['seccion']} (${dataMap['anio']})",
-
         (idDocenteSeleccionado) {
           setState(() => _isUploading = true);
           _procesarAsistenciaExcel(
@@ -129,7 +128,6 @@ class _ImportarArchivosViewState extends State<ImportarArchivosView> {
       _mostrarError(res.message ?? "Error desconocido.", detalle: res.data);
     }
   }
-
 
   Future<void> _procesarNotas(
     int idUsuario, {
@@ -162,12 +160,10 @@ class _ImportarArchivosViewState extends State<ImportarArchivosView> {
         },
       );
     } else if (res.status == 'require_teacher_selection') {
-
       final dataMap = res.data as Map<String, dynamic>;
       _mostrarModalSeleccionDocente(
         dataMap['docentes'],
         "${dataMap['grado']} - ${dataMap['seccion']} (${dataMap['anio']})",
-
         (idDocenteSeleccionado) {
           setState(() => _isUploading = true);
           _procesarNotas(
@@ -180,8 +176,6 @@ class _ImportarArchivosViewState extends State<ImportarArchivosView> {
       _mostrarError(res.message ?? "Error al cargar notas", detalle: res.data);
     }
   }
-
-
 
   void _mostrarAlertaDuplicado(
     String titulo,
@@ -229,7 +223,6 @@ class _ImportarArchivosViewState extends State<ImportarArchivosView> {
       ),
     );
   }
-
 
   void _mostrarModalSeleccionDocente(
     List<dynamic> docentes,
@@ -297,7 +290,6 @@ class _ImportarArchivosViewState extends State<ImportarArchivosView> {
                       ? null
                       : () {
                           Navigator.pop(ctx);
-
                           onGuardar(docenteSeleccionado!);
                         },
                   icon: const Icon(Icons.save, size: 18),
@@ -340,7 +332,7 @@ class _ImportarArchivosViewState extends State<ImportarArchivosView> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text(
-          "Hubo un problema",
+          "Aviso del Sistema",
           style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
         ),
         content: Column(
@@ -485,61 +477,94 @@ class _ImportarArchivosViewState extends State<ImportarArchivosView> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  InkWell(
-                    onTap: _seleccionarArchivo,
-                    borderRadius: BorderRadius.circular(8),
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 30,
-                        horizontal: 20,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _archivoSeleccionado != null
-                            ? Colors.green.withOpacity(0.05)
-                            : Colors.grey.withOpacity(0.05),
-                        border: Border.all(
-                          color: _archivoSeleccionado != null
-                              ? Colors.green
-                              : Colors.grey.withOpacity(0.4),
-                          width: 1.5,
-                          style: BorderStyle.solid,
+                  
+                  // COMPONENTE DRAG & DROP IMPLEMENTADO
+                  DropTarget(
+                    onDragEntered: (detail) {
+                      setState(() => _isDragging = true);
+                    },
+                    onDragExited: (detail) {
+                      setState(() => _isDragging = false);
+                    },
+                    onDragDone: (detail) async {
+                      setState(() => _isDragging = false);
+                      if (detail.files.isNotEmpty) {
+                        final file = detail.files.first;
+                        final bytes = await file.readAsBytes();
+                        final size = await file.length();
+                        
+                        setState(() {
+                          _archivoSeleccionado = file_picker.PlatformFile(
+                            name: file.name,
+                            size: size,
+                            bytes: bytes,
+                            readStream: null,
+                          );
+                        });
+                      }
+                    },
+                    child: InkWell(
+                      onTap: _seleccionarArchivo,
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 40,
+                          horizontal: 20,
                         ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Column(
-                        children: [
-                          Icon(
-                            _archivoSeleccionado != null
-                                ? Icons.description
-                                : Icons.upload_file,
-                            size: 48,
-                            color: _archivoSeleccionado != null
-                                ? Colors.green[600]
-                                : Colors.grey[500],
+                        decoration: BoxDecoration(
+                          color: _isDragging 
+                              ? Colors.green.withOpacity(0.15)
+                              : (_archivoSeleccionado != null
+                                  ? Colors.green.withOpacity(0.05)
+                                  : Colors.grey.withOpacity(0.05)),
+                          border: Border.all(
+                            color: _isDragging 
+                                ? Colors.green
+                                : (_archivoSeleccionado != null
+                                    ? Colors.green
+                                    : Colors.grey.withOpacity(0.4)),
+                            width: _isDragging ? 2.5 : 1.5,
+                            style: BorderStyle.solid,
                           ),
-                          const SizedBox(height: 12),
-                          Text(
-                            _archivoSeleccionado?.name ??
-                                "Haz clic para seleccionar el archivo Excel",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w500,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          children: [
+                            Icon(
+                              _archivoSeleccionado != null
+                                  ? Icons.description
+                                  : Icons.cloud_upload,
+                              size: 48,
                               color: _archivoSeleccionado != null
-                                  ? Colors.black87
-                                  : Colors.grey[600],
-                              fontSize: 16,
+                                  ? Colors.green[600]
+                                  : (_isDragging ? Colors.green : Colors.grey[500]),
                             ),
-                          ),
-                          if (_archivoSeleccionado == null)
+                            const SizedBox(height: 12),
                             Text(
-                              "(Formatos soportados: .xlsx, .xls)",
+                              _archivoSeleccionado?.name ??
+                                  "Arrastra y suelta tu archivo Excel aquí\n(O haz clic para seleccionar)",
+                              textAlign: TextAlign.center,
                               style: TextStyle(
-                                color: Colors.grey[400],
-                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: _archivoSeleccionado != null
+                                    ? Colors.black87
+                                    : Colors.grey[600],
+                                fontSize: 16,
                               ),
                             ),
-                        ],
+                            if (_archivoSeleccionado == null) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                "(Formatos soportados: .xlsx, .xls - Máx 5MB)",
+                                style: TextStyle(
+                                  color: Colors.grey[500],
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ]
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -551,10 +576,10 @@ class _ImportarArchivosViewState extends State<ImportarArchivosView> {
                     child: ElevatedButton.icon(
                       onPressed:
                           (_isUploading ||
-                              _archivoSeleccionado == null ||
-                              _tipoArchivoSeleccionado == null)
-                          ? null
-                          : _enviarDatos,
+                                  _archivoSeleccionado == null ||
+                                  _tipoArchivoSeleccionado == null)
+                              ? null
+                              : _enviarDatos,
                       icon: _isUploading
                           ? const SizedBox(
                               width: 20,

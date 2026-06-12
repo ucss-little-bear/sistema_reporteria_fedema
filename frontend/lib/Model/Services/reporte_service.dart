@@ -9,8 +9,6 @@ import 'package:excel/excel.dart';
 
 class ReporteService {
 
-
-
   Future<ApiResponse<List<Reporte>>> listarReportes(
     int idUsuario,
     int idRol,
@@ -43,10 +41,30 @@ class ReporteService {
     }
   }
 
+  // VALIDACIÓN DE SEGURIDAD FRONTEND
+  ApiResponse<dynamic>? _validarArchivoSeguridad(PlatformFile file) {
+    // 1. Filtro estricto de extensión permitida (.xls y .xlsx)
+    final extension = file.name.split('.').last.toLowerCase();
+    if (extension != 'xls' && extension != 'xlsx') {
+      return ApiResponse(
+        status: "error",
+        message: "Formato de archivo no permitido.\n\nPor favor, asegúrese de arrastrar únicamente archivos Excel (.xls o .xlsx) exportados desde el SIAGIE.",
+      );
+    }
 
+    // 2. Filtro estricto de peso límite (Máximo 5MB)
+    final maxBytes = 5 * 1024 * 1024; // 5 Megabytes
+    final currentBytesLength = _obtenerBytes(file).length;
+    
+    if (file.size > maxBytes || currentBytesLength > maxBytes) {
+      return ApiResponse(
+        status: "error",
+        message: "El archivo excede el tamaño máximo permitido (5MB).\n\nPor favor, fragmente su reporte para evitar sobrecargar el sistema.",
+      );
+    }
 
-
-
+    return null; // Archivo válido, permite continuar.
+  }
 
   Future<ApiResponse<dynamic>> enviarAsistenciaExcel(
     PlatformFile file,
@@ -55,6 +73,10 @@ class ReporteService {
     bool force = false,
   }) async {
     try {
+      // Interceptar con validación preventiva
+      final errorSeguridad = _validarArchivoSeguridad(file);
+      if (errorSeguridad != null) return errorSeguridad;
+
       List<int> bytes = _obtenerBytes(file);
       if (bytes.isEmpty)
         return ApiResponse(status: "error", message: "Archivo vacío.");
@@ -98,7 +120,6 @@ class ReporteService {
     }
   }
 
-
   Future<ApiResponse<dynamic>> enviarNotasExcel(
     PlatformFile file,
     int idUsuario, {
@@ -106,6 +127,10 @@ class ReporteService {
     bool force = false,
   }) async {
     try {
+      // Interceptar con validación preventiva
+      final errorSeguridad = _validarArchivoSeguridad(file);
+      if (errorSeguridad != null) return errorSeguridad;
+
       List<int> bytes = _obtenerBytes(file);
       if (bytes.isEmpty)
         return ApiResponse(status: "error", message: "Archivo vacío.");
@@ -151,11 +176,6 @@ class ReporteService {
     }
   }
 
-
-
-
-
-
   Future<List<String>> getAnios() async {
     final res = await _post("listar_anios_reporte", {});
     return (res['data'] as List).map((e) => e.toString()).toList();
@@ -177,14 +197,12 @@ class ReporteService {
     return List<Map<String, dynamic>>.from(res['data']);
   }
 
-
   Future<List<String>> getBimestres(int idPeriodo) async {
     final res = await _post("listar_bimestres_reporte", {
       "id_periodo": idPeriodo,
     });
     return (res['data'] as List).map((e) => e.toString()).toList();
   }
-
 
   Future<List<String>> getBimestresPorNivel(String anio, String nivel) async {
     final res = await _post("listar_bimestres_nivel", {
@@ -193,7 +211,6 @@ class ReporteService {
     });
     return (res['data'] as List).map((e) => e.toString()).toList();
   }
-
 
   Future<ApiResponse<dynamic>> generarBoletaNotas({
     required int idUsuario,
@@ -218,7 +235,6 @@ class ReporteService {
       return ApiResponse(status: "error", message: "Error: $e");
     }
   }
-
 
   Future<ApiResponse<dynamic>> generarReporteRendimiento({
     required int idUsuario,
@@ -247,10 +263,6 @@ class ReporteService {
       return ApiResponse(status: "error", message: "Error: $e");
     }
   }
-
-
-
-
 
   List<int> _obtenerBytes(PlatformFile file) {
     if (file.bytes != null) return file.bytes!;
@@ -323,7 +335,6 @@ class ReporteService {
     }
   }
 
-
   Future<ApiResponse<bool>> crearReporte(
     int idUsuario,
     int tipoReporte,
@@ -334,8 +345,7 @@ class ReporteService {
         "accion": "crear_reporte",
         "id_usuario": idUsuario,
         "tipo_reporte": tipoReporte,
-        "ruta":
-            "ruta/temporal/pendiente.pdf",
+        "ruta": "ruta/temporal/pendiente.pdf",
         "parametros": parametros,
       });
 
@@ -347,7 +357,6 @@ class ReporteService {
 
       if (response.statusCode == 200) {
         final jsonMap = jsonDecode(response.body);
-
         return ApiResponse(
           status: jsonMap['status'],
           message: jsonMap['message'],
@@ -359,7 +368,6 @@ class ReporteService {
       return ApiResponse(status: "error", message: "Excepción: $e");
     }
   }
-
 
   Future<ApiResponse<bool>> firmarReporte(
     int idReporte,
@@ -482,7 +490,6 @@ class ReporteService {
       final res = await _post("obtener_datos_reporte", {
         "id_reporte": idReporte,
       });
-
 
       if (res['status'] == 'success' && res['data'] != null) {
         return ApiResponse(
