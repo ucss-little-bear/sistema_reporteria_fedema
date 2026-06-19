@@ -12,6 +12,7 @@ import 'package:frontend/View/login_screen.dart';
 import 'package:frontend/View/panel_principal.dart';
 import 'package:frontend/View/reportes_finales.dart';
 import 'package:frontend/View/reportes_rendimiento.dart';
+import 'package:frontend/View/crear_pin_dialog.dart';
 import 'package:provider/provider.dart';
 
 class MainLayout extends StatefulWidget {
@@ -193,16 +194,13 @@ class _MainLayoutState extends State<MainLayout> {
     return Scaffold(
       body: Row(
         children: [
-
           AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             width: _isSidebarExpanded ? 260 : 70,
             color: theme.primaryColor,
             child: Column(
               children: [
-
                 Padding(
-
                   padding: _isSidebarExpanded
                       ? const EdgeInsets.fromLTRB(24, 24, 16, 20)
                       : const EdgeInsets.symmetric(vertical: 24),
@@ -223,7 +221,6 @@ class _MainLayoutState extends State<MainLayout> {
                           size: 24,
                         ),
                       ),
-
                       if (_isSidebarExpanded) ...[
                         const SizedBox(width: 12),
                         const Expanded(
@@ -261,15 +258,12 @@ class _MainLayoutState extends State<MainLayout> {
                     onPressed: () => setState(() => _isSidebarExpanded = true),
                   ),
 
-
                 if (_isSidebarExpanded) ...[
                   Container(
-                    width: double
-                        .infinity,
+                    width: double.infinity,
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment
-                          .center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Text(
                           "Hola, ${usuario.nombres.split(' ')[0]}",
@@ -309,9 +303,121 @@ class _MainLayoutState extends State<MainLayout> {
                   const SizedBox(height: 20),
                 ],
 
+                // Info Usuario (CORREGIDO: CENTRADO)
+                if (_isSidebarExpanded) ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(
+                          "Hola, ${usuario.nombres.split(' ')[0]}",
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.white12),
+                          ),
+                          child: Text(
+                            usuario.rolDescripcion ?? "Usuario",
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+
+                // ===== INICIO DEL CAMBIO VISUAL: AVISO PIN CONFIGURACIÓN =====
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  child: Tooltip(
+                    message: _isSidebarExpanded
+                        ? ""
+                        : "Falta configurar PIN de firma",
+                    child: InkWell(
+                      onTap: () {
+                        showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (context) => const CrearPinDialog(),
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(8),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        padding: EdgeInsets.symmetric(
+                          vertical: 10,
+                          horizontal: _isSidebarExpanded ? 12 : 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(8),
+                          border:
+                              Border.all(color: Colors.amber.withOpacity(0.3)),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: _isSidebarExpanded
+                              ? MainAxisAlignment.start
+                              : MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.vpn_key_outlined,
+                                color: Colors.amber[400], size: 20),
+                            if (_isSidebarExpanded) ...[
+                              const SizedBox(width: 12),
+                              const Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "Falta configurar PIN",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                    SizedBox(height: 2),
+                                    Text(
+                                      "Click para crear",
+                                      style: TextStyle(
+                                        color: Colors.white60,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                // ===== FIN DEL CAMBIO VISUAL =====
+
                 const Divider(color: Colors.white10, height: 1),
                 const SizedBox(height: 8),
-
 
                 Expanded(
                   child: ListView.builder(
@@ -385,11 +491,7 @@ class _MainLayoutState extends State<MainLayout> {
 
                 const Divider(color: Colors.white10, height: 1),
 
-
                 Padding(
-
-
-
                   padding: EdgeInsets.all(_isSidebarExpanded ? 16 : 8),
                   child: _LogoutButton(
                     isExpanded: _isSidebarExpanded,
@@ -399,8 +501,6 @@ class _MainLayoutState extends State<MainLayout> {
               ],
             ),
           ),
-
-
           Expanded(
             child: Container(
               color: const Color(0xFFF5F6FA),
@@ -421,7 +521,6 @@ class _MainLayoutState extends State<MainLayout> {
     );
   }
 }
-
 
 class _LogoutButton extends StatefulWidget {
   final bool isExpanded;
@@ -448,21 +547,18 @@ class _LogoutButtonState extends State<_LogoutButton> {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
           decoration: BoxDecoration(
-            color: _isHovering
-                ? Colors.red.withOpacity(0.2)
-                : Colors.transparent,
+            color:
+                _isHovering ? Colors.red.withOpacity(0.2) : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
             border: _isHovering
                 ? Border.all(color: Colors.red.withOpacity(0.5))
                 : null,
           ),
           child: Row(
-
             mainAxisAlignment: widget.isExpanded
                 ? MainAxisAlignment.start
                 : MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize
-                .min,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
                 Icons.logout,
@@ -472,7 +568,6 @@ class _LogoutButtonState extends State<_LogoutButton> {
               if (widget.isExpanded) ...[
                 const SizedBox(width: 12),
                 Flexible(
-
                   child: Text(
                     "Cerrar Sesión",
                     style: TextStyle(
