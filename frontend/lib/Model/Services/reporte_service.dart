@@ -9,8 +9,6 @@ import 'package:excel/excel.dart';
 
 class ReporteService {
 
-
-
   Future<ApiResponse<List<Reporte>>> listarReportes(
     int idUsuario,
     int idRol,
@@ -42,11 +40,6 @@ class ReporteService {
       return ApiResponse(status: "error", message: "Error: $e");
     }
   }
-
-
-
-
-
 
   Future<ApiResponse<dynamic>> enviarAsistenciaExcel(
     PlatformFile file,
@@ -97,7 +90,6 @@ class ReporteService {
       );
     }
   }
-
 
   Future<ApiResponse<dynamic>> enviarNotasExcel(
     PlatformFile file,
@@ -151,11 +143,6 @@ class ReporteService {
     }
   }
 
-
-
-
-
-
   Future<List<String>> getAnios() async {
     final res = await _post("listar_anios_reporte", {});
     return (res['data'] as List).map((e) => e.toString()).toList();
@@ -177,14 +164,12 @@ class ReporteService {
     return List<Map<String, dynamic>>.from(res['data']);
   }
 
-
   Future<List<String>> getBimestres(int idPeriodo) async {
     final res = await _post("listar_bimestres_reporte", {
       "id_periodo": idPeriodo,
     });
     return (res['data'] as List).map((e) => e.toString()).toList();
   }
-
 
   Future<List<String>> getBimestresPorNivel(String anio, String nivel) async {
     final res = await _post("listar_bimestres_nivel", {
@@ -193,7 +178,6 @@ class ReporteService {
     });
     return (res['data'] as List).map((e) => e.toString()).toList();
   }
-
 
   Future<ApiResponse<dynamic>> generarBoletaNotas({
     required int idUsuario,
@@ -218,7 +202,6 @@ class ReporteService {
       return ApiResponse(status: "error", message: "Error: $e");
     }
   }
-
 
   Future<ApiResponse<dynamic>> generarReporteRendimiento({
     required int idUsuario,
@@ -247,10 +230,6 @@ class ReporteService {
       return ApiResponse(status: "error", message: "Error: $e");
     }
   }
-
-
-
-
 
   List<int> _obtenerBytes(PlatformFile file) {
     if (file.bytes != null) return file.bytes!;
@@ -323,7 +302,6 @@ class ReporteService {
     }
   }
 
-
   Future<ApiResponse<bool>> crearReporte(
     int idUsuario,
     int tipoReporte,
@@ -359,7 +337,6 @@ class ReporteService {
       return ApiResponse(status: "error", message: "Excepción: $e");
     }
   }
-
 
   Future<ApiResponse<bool>> firmarReporte(
     int idReporte,
@@ -482,7 +459,6 @@ class ReporteService {
       final res = await _post("obtener_datos_reporte", {
         "id_reporte": idReporte,
       });
-
 
       if (res['status'] == 'success' && res['data'] != null) {
         return ApiResponse(
