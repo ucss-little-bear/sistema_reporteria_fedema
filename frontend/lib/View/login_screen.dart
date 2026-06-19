@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend/Controller/auth_provider_controller.dart';
 import 'package:frontend/View/main_layout.dart';
 import 'package:provider/provider.dart';
+import 'package:frontend/View/cambio_password_obligatorio.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -33,9 +34,10 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (exito && mounted) {
+        // TRUCO TEMPORAL PARA LA PRESENTACIÓN DE HOY
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const MainLayout()),
+          MaterialPageRoute(builder: (_) => const CambioPasswordObligatorioScreen()),
         );
       } else {
         if (mounted) {
