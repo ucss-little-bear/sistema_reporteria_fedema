@@ -43,7 +43,58 @@ class ReporteService {
     }
   }
 
+  Future<ApiResponse<List<Map<String, dynamic>>>> obtenerAvisosPendientes(
+    int idUsuario,
+    int idRol,
+  ) async {
+    try {
+      final body = {
+        "accion": "obtener_avisos_pendientes",
+        "id_usuario": idUsuario,
+        "id_rol": idRol,
+      };
 
+      final response = await http.post(
+        Uri.parse(ApiConfig.baseUrl),
+        headers: ApiConfig.headers,
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 200) {
+        final jsonMap = jsonDecode(response.body);
+
+        if (jsonMap['status'] == 'success') {
+          final data = jsonMap['data'];
+
+          return ApiResponse<List<Map<String, dynamic>>>(
+            status: jsonMap['status'],
+            message: jsonMap['message'] ?? 'Avisos cargados correctamente.',
+            data: data is List
+                ? data.map((item) => Map<String, dynamic>.from(item)).toList()
+                : <Map<String, dynamic>>[],
+          );
+        }
+
+        return ApiResponse<List<Map<String, dynamic>>>(
+          status: jsonMap['status'] ?? 'error',
+          message: jsonMap['message'] ?? 'No se pudieron obtener los avisos.',
+          data: <Map<String, dynamic>>[],
+        );
+      }
+
+      return ApiResponse<List<Map<String, dynamic>>>(
+        status: "error",
+        message: "HTTP ${response.statusCode}",
+        data: <Map<String, dynamic>>[],
+      );
+    } catch (e) {
+      return ApiResponse<List<Map<String, dynamic>>>(
+        status: "error",
+        message: "Error al obtener avisos pendientes: $e",
+        data: <Map<String, dynamic>>[],
+      );
+    }
+  }
 
 
 
