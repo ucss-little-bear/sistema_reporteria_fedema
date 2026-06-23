@@ -367,6 +367,156 @@ class Negocio {
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    public function obtenerAvisosPendientes($idUsuario, $idRol) {
+        try {
+            $idUsuario = (int)$idUsuario;
+            $idRol = (int)$idRol;
+
+            $avisos = [];
+            $totalDocumentos = 0;
+
+            if ($idRol === 2) {
+                // Directora: reportes generados pendientes de revisión/firma
+                $stmt = $this->conn->prepare("
+                    SELECT COUNT(*) 
+                    FROM Historial_Reporte 
+                    WHERE id_estado_reporte = 1
+                ");
+                $stmt->execute();
+                $cantidad = (int)$stmt->fetchColumn();
+
+                if ($cantidad > 0) {
+                    $totalDocumentos += $cantidad;
+                    $avisos[] = [
+                        "id" => "firmar_generados",
+                        "titulo" => "Reportes generados pendientes",
+                        "descripcion" => "Existen reportes generados pendientes de revisión por Dirección.",
+                        "cantidad" => $cantidad,
+                        "estado_id" => 1,
+                        "modulo_titulo" => "Firmar Generados"
+                    ];
+                }
+            }
+
+            if ($idRol === 1) {
+                // Secretaría Académica: reportes revisados pendientes de validación/firma
+                $stmt = $this->conn->prepare("
+                    SELECT COUNT(*) 
+                    FROM Historial_Reporte 
+                    WHERE id_estado_reporte = 2
+                ");
+                $stmt->execute();
+                $cantidad = (int)$stmt->fetchColumn();
+
+                if ($cantidad > 0) {
+                    $totalDocumentos += $cantidad;
+                    $avisos[] = [
+                        "id" => "firmar_revisados",
+                        "titulo" => "Reportes revisados pendientes",
+                        "descripcion" => "Existen reportes revisados listos para validación de Secretaría Académica.",
+                        "cantidad" => $cantidad,
+                        "estado_id" => 2,
+                        "modulo_titulo" => "Firmar Revisados"
+                    ];
+                }
+
+                // Secretaría Académica: documentos finales disponibles
+                $stmt = $this->conn->prepare("
+                    SELECT COUNT(*) 
+                    FROM Historial_Reporte 
+                    WHERE id_estado_reporte = 3
+                ");
+                $stmt->execute();
+                $cantidad = (int)$stmt->fetchColumn();
+
+                if ($cantidad > 0) {
+                    $totalDocumentos += $cantidad;
+                    $avisos[] = [
+                        "id" => "reportes_finales",
+                        "titulo" => "Reportes finales disponibles",
+                        "descripcion" => "Existen documentos finales disponibles para consulta o exportación.",
+                        "cantidad" => $cantidad,
+                        "estado_id" => 3,
+                        "modulo_titulo" => "Reportes Finales"
+                    ];
+                }
+            }
+
+            if ($idRol === 3) {
+                // Docente: obtener su nombre tal como se usa en informacion_adicional
+                $stmtU = $this->conn->prepare("
+                    SELECT CONCAT(apellidos, ', ', nombres) AS nombre_completo 
+                    FROM Usuario_Sistema 
+                    WHERE id_usuario = ?
+                ");
+                $stmtU->execute([$idUsuario]);
+                $nombreDocente = $stmtU->fetchColumn();
+
+                if ($nombreDocente) {
+                    // Docente: boletas pendientes de firma final
+                    $stmt = $this->conn->prepare("
+                        SELECT COUNT(*) 
+                        FROM Historial_Reporte 
+                        WHERE id_estado_reporte = 5
+                        AND id_tipo_reporte = 1
+                        AND informacion_adicional LIKE ?
+                    ");
+                    $stmt->execute(["%$nombreDocente%"]);
+                    $cantidad = (int)$stmt->fetchColumn();
+
+                    if ($cantidad > 0) {
+                        $totalDocumentos += $cantidad;
+                        $avisos[] = [
+                            "id" => "firmar_boletas",
+                            "titulo" => "Boletas pendientes de firma",
+                            "descripcion" => "Existen boletas de notas listas para firma final del docente.",
+                            "cantidad" => $cantidad,
+                            "estado_id" => 5,
+                            "modulo_titulo" => "Firmar Boletas"
+                        ];
+                    }
+
+                    // Docente: boletas finales disponibles
+                    $stmt = $this->conn->prepare("
+                        SELECT COUNT(*) 
+                        FROM Historial_Reporte 
+                        WHERE id_estado_reporte = 3
+                        AND id_tipo_reporte = 1
+                        AND informacion_adicional LIKE ?
+                    ");
+                    $stmt->execute(["%$nombreDocente%"]);
+                    $cantidad = (int)$stmt->fetchColumn();
+
+                    if ($cantidad > 0) {
+                        $totalDocumentos += $cantidad;
+                        $avisos[] = [
+                            "id" => "boletas_finales",
+                            "titulo" => "Boletas finales disponibles",
+                            "descripcion" => "Existen boletas finales disponibles para consulta o descarga.",
+                            "cantidad" => $cantidad,
+                            "estado_id" => 3,
+                            "modulo_titulo" => "Boletas Finales"
+                        ];
+                    }
+                }
+            }
+
+            return [
+                "status" => "success",
+                "message" => "Avisos consultados correctamente.",
+                "total" => $totalDocumentos,
+                "data" => $avisos
+            ];
+
+        } catch (Exception $e) {
+            return [
+                "status" => "error",
+                "message" => "Error al obtener avisos pendientes: " . $e->getMessage()
+            ];
+        }
+    }
+
     public function cambiarEstadoReporte($idReporte, $nuevoEstado) {
         try {
             $sql = "UPDATE Historial_Reporte SET id_estado_reporte = ? WHERE id_reporte = ?";

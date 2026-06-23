@@ -35,7 +35,7 @@ try {
 
     $negocio = new Negocio();
     $input = file_get_contents("php://input");
-    
+
     if (empty($input)) {
 
         $data = (object)$_POST;
@@ -57,15 +57,15 @@ try {
         case 'listar_usuarios':
             $response = $negocio->listarUsuarios();
             break;
-        
+
         case 'editar_usuario':
             if (isset($data->id_usuario) && isset($data->nombres) && isset($data->usuario)) {
                 $response = $negocio->editarUsuario(
                     $data->id_usuario,
-                    $data->nombres, 
-                    $data->apellidos ?? '', 
-                    $data->dni ?? '', 
-                    $data->usuario, 
+                    $data->nombres,
+                    $data->apellidos ?? '',
+                    $data->dni ?? '',
+                    $data->usuario,
                     $data->id_rol ?? 3,
                     $data->correo ?? ''
                 );
@@ -73,7 +73,7 @@ try {
                 $response = ["status" => "error", "message" => "Datos incompletos para editar"];
             }
             break;
-        
+
         case 'cambiar_password':
             if (isset($data->id_usuario) && isset($data->new_password)) {
                 $response = $negocio->cambiarPassword($data->id_usuario, $data->new_password);
@@ -86,11 +86,11 @@ try {
 
             if (isset($data->nombres) && isset($data->usuario) && isset($data->password)) {
                 $response = $negocio->crearUsuario(
-                    $data->nombres, 
-                    $data->apellidos ?? '', 
-                    $data->dni ?? '', 
-                    $data->usuario, 
-                    $data->password, 
+                    $data->nombres,
+                    $data->apellidos ?? '',
+                    $data->dni ?? '',
+                    $data->usuario,
+                    $data->password,
                     $data->id_rol ?? 3,
                     $data->correo ?? ''
                 );
@@ -112,6 +112,17 @@ try {
             $response = ["status" => "success", "data" => $negocio->listarReportes($idU, $idR)];
             break;
 
+        case 'obtener_avisos_pendientes':
+            if (isset($data->id_usuario) && isset($data->id_rol)) {
+                $response = $negocio->obtenerAvisosPendientes(
+                    $data->id_usuario,
+                    $data->id_rol
+                );
+            } else {
+                $response = ["status" => "error", "message" => "Faltan datos para obtener avisos pendientes"];
+            }
+            break;
+
         case 'crear_reporte':
             if (isset($data->id_usuario) && isset($data->tipo_reporte) && isset($data->ruta)) {
                 $params = isset($data->parametros) ? $data->parametros : "";
@@ -129,7 +140,7 @@ try {
                 $response = ["status" => "error", "message" => "Faltan datos de usuario para firmar"];
             }
             break;
-        
+
         case 'firmar_lote_reportes':
             if (isset($data->ids) && is_array($data->ids) && isset($data->id_usuario) && isset($data->id_rol)) {
                 $response = $negocio->firmarLoteBoletas($data->ids, $data->id_usuario, $data->id_rol);
@@ -137,7 +148,7 @@ try {
                 $response = ["status" => "error", "message" => "Faltan datos para firma masiva"];
             }
             break;
-        
+
         case 'listar_alumnos':
             if (isset($data->id_periodo)) {
                 $response = $negocio->obtenerAlumnosPorSeccion($data->id_periodo);
@@ -153,10 +164,10 @@ try {
                 $nombre = $data->nombre_archivo ?? 'asistencia.xlsx';
                 $idDocente = isset($data->id_docente) ? $data->id_docente : null;
                 $force = isset($data->force_upload) ? $data->force_upload : false;
-                
+
                 $response = $negocio->procesarAsistenciaExcel(
-                    $data->filas, 
-                    $nombre, 
+                    $data->filas,
+                    $nombre,
                     $data->id_usuario,
                     $idDocente,
                     $force
@@ -172,10 +183,10 @@ try {
                 $nombre = $data->nombre_archivo ?? 'notas.xlsx';
                 $idDocente = isset($data->id_docente) ? $data->id_docente : null;
                 $force = isset($data->force_upload) ? $data->force_upload : false;
-                
+
                 $response = $negocio->procesarNotasExcel(
-                    $hojas, 
-                    $nombre, 
+                    $hojas,
+                    $nombre,
                     $data->id_usuario,
                     $idDocente,
                     $force
@@ -184,7 +195,7 @@ try {
                 $response = ["status" => "error", "message" => "Faltan datos para notas"];
             }
             break;
-                case 'listar_anios_reporte':
+        case 'listar_anios_reporte':
             $response = ["status" => "success", "data" => $negocio->listarAniosReporte()];
             break;
 
@@ -236,13 +247,13 @@ try {
                 $response = ["status" => "error", "message" => "Faltan datos (año, nivel)"];
             }
             break;
-        
+
         case 'generar_reporte_rendimiento':
             if (isset($data->id_usuario, $data->anio, $data->nivel, $data->bimestre, $data->fecha_inicio, $data->fecha_fin)) {
-                
+
                 $force = isset($data->force) ? $data->force : false;
                 $ignore = isset($data->ignore_missing) ? $data->ignore_missing : false;
-                
+
                 $response = $negocio->generarReporteRendimiento(
                     $data->id_usuario,
                     $data->anio,
@@ -288,7 +299,7 @@ try {
                 $response = ["status" => "error", "message" => "Parámetros incompletos"];
             }
             break;
-            
+
         case 'obtener_datos_reporte':
             if (isset($data->id_reporte)) {
                 $response = $negocio->obtenerDatosParaReporte($data->id_reporte);
@@ -296,16 +307,15 @@ try {
                 $response = ["status" => "error", "message" => "Falta ID"];
             }
             break;
-            
+
         default:
             $response = ["status" => "error", "message" => "Acción no reconocida: " . $accion];
             break;
     }
-    
 } catch (Throwable $e) {
 
     $response = [
-        "status" => "error", 
+        "status" => "error",
         "message" => "Error Crítico Backend: " . $e->getMessage(),
         "file" => basename($e->getFile()),
         "line" => $e->getLine()
@@ -319,7 +329,7 @@ $json_final = json_encode($response);
 
 if ($json_final === false) {
     echo json_encode([
-        "status" => "error", 
+        "status" => "error",
         "message" => "Fallo al generar JSON (Posible problema de caracteres): " . json_last_error_msg()
     ]);
 } else {
@@ -327,4 +337,3 @@ if ($json_final === false) {
 }
 
 ob_end_flush();
-?>
