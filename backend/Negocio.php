@@ -483,6 +483,7 @@ class Negocio {
                         FROM Historial_Reporte 
                         WHERE id_estado_reporte = 3
                         AND id_tipo_reporte = 1
+                        AND COALESCE(aviso_final_visto, 0) = 0
                         AND informacion_adicional LIKE ?
                     ");
                     $stmt->execute(["%$nombreDocente%"]);
@@ -513,6 +514,61 @@ class Negocio {
             return [
                 "status" => "error",
                 "message" => "Error al obtener avisos pendientes: " . $e->getMessage()
+            ];
+        }
+    }
+
+    public function marcarBoletasFinalesVistas($idUsuario, $idRol) {
+        try {
+            $idUsuario = (int)$idUsuario;
+            $idRol = (int)$idRol;
+
+            if ($idRol !== 3) {
+                return [
+                    "status" => "error",
+                    "message" => "Solo el rol Docente puede marcar boletas finales como vistas."
+                ];
+            }
+
+            $stmtU = $this->conn->prepare("
+                SELECT CONCAT(apellidos, ', ', nombres) AS nombre_completo
+                FROM Usuario_Sistema
+                WHERE id_usuario = ?
+            ");
+            $stmtU->execute([$idUsuario]);
+            $nombreDocente = $stmtU->fetchColumn();
+
+            if (!$nombreDocente) {
+                return [
+                    "status" => "error",
+                    "message" => "No se encontró el docente asociado al usuario."
+                ];
+            }
+
+            $stmt = $this->conn->prepare("
+                UPDATE Historial_Reporte
+                SET aviso_final_visto = 1,
+                    fecha_aviso_final_visto = NOW()
+                WHERE id_estado_reporte = 3
+                AND id_tipo_reporte = 1
+                AND COALESCE(aviso_final_visto, 0) = 0
+                AND informacion_adicional LIKE ?
+            ");
+
+            $stmt->execute(["%$nombreDocente%"]);
+
+            return [
+                "status" => "success",
+                "message" => "Boletas finales marcadas como vistas correctamente.",
+                "data" => [
+                    "actualizados" => $stmt->rowCount()
+                ]
+            ];
+
+        } catch (Exception $e) {
+            return [
+                "status" => "error",
+                "message" => "Error al marcar boletas finales como vistas: " . $e->getMessage()
             ];
         }
     }

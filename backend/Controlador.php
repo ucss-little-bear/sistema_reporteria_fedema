@@ -122,6 +122,20 @@ try {
                 $response = ["status" => "error", "message" => "Faltan datos para obtener avisos pendientes"];
             }
             break;
+        
+        case 'marcar_boletas_finales_vistas':
+            if (isset($data->id_usuario) && isset($data->id_rol)) {
+            $response = $negocio->marcarBoletasFinalesVistas(
+                $data->id_usuario,
+                $data->id_rol
+            );
+            } else {
+                $response = [
+                    "status" => "error",
+                    "message" => "Faltan datos para marcar boletas finales como vistas"
+                ];
+            }
+            break;
 
         case 'crear_reporte':
             if (isset($data->id_usuario) && isset($data->tipo_reporte) && isset($data->ruta)) {
