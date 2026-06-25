@@ -122,17 +122,18 @@ try {
                 $response = ["status" => "error", "message" => "Faltan datos para obtener avisos pendientes"];
             }
             break;
-        
-        case 'marcar_boletas_finales_vistas':
-            if (isset($data->id_usuario) && isset($data->id_rol)) {
-            $response = $negocio->marcarBoletasFinalesVistas(
-                $data->id_usuario,
-                $data->id_rol
-            );
+
+        case 'marcar_aviso_reporte_visto':
+            if (isset($data->id_usuario) && isset($data->id_rol) && isset($data->tipo_aviso)) {
+                $response = $negocio->marcarAvisoReporteVisto(
+                    $data->id_usuario,
+                    $data->id_rol,
+                    $data->tipo_aviso
+                );
             } else {
                 $response = [
                     "status" => "error",
-                    "message" => "Faltan datos para marcar boletas finales como vistas"
+                    "message" => "Faltan datos para marcar el aviso como visto"
                 ];
             }
             break;

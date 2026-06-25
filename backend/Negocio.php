@@ -423,11 +423,17 @@ class Negocio {
 
                 // Secretaría Académica: documentos finales disponibles
                 $stmt = $this->conn->prepare("
-                    SELECT COUNT(*) 
-                    FROM Historial_Reporte 
-                    WHERE id_estado_reporte = 3
+                    SELECT COUNT(*)
+                    FROM Historial_Reporte hr
+                    LEFT JOIN Aviso_Reporte_Visto arv
+                        ON arv.id_reporte = hr.id_reporte
+                        AND arv.id_usuario = ?
+                        AND arv.id_rol = ?
+                        AND arv.tipo_aviso = 'reportes_finales'
+                    WHERE hr.id_estado_reporte = 3
+                    AND arv.id_aviso_visto IS NULL
                 ");
-                $stmt->execute();
+                $stmt->execute([$idUsuario, $idRol]);
                 $cantidad = (int)$stmt->fetchColumn();
 
                 if ($cantidad > 0) {
@@ -479,14 +485,19 @@ class Negocio {
 
                     // Docente: boletas finales disponibles
                     $stmt = $this->conn->prepare("
-                        SELECT COUNT(*) 
-                        FROM Historial_Reporte 
-                        WHERE id_estado_reporte = 3
-                        AND id_tipo_reporte = 1
-                        AND COALESCE(aviso_final_visto, 0) = 0
-                        AND informacion_adicional LIKE ?
+                        SELECT COUNT(*)
+                        FROM Historial_Reporte hr
+                        LEFT JOIN Aviso_Reporte_Visto arv
+                            ON arv.id_reporte = hr.id_reporte
+                            AND arv.id_usuario = ?
+                            AND arv.id_rol = ?
+                            AND arv.tipo_aviso = 'boletas_finales'
+                        WHERE hr.id_estado_reporte = 3
+                        AND hr.id_tipo_reporte = 1
+                        AND hr.informacion_adicional LIKE ?
+                        AND arv.id_aviso_visto IS NULL
                     ");
-                    $stmt->execute(["%$nombreDocente%"]);
+                    $stmt->execute([$idUsuario, $idRol, "%$nombreDocente%"]);
                     $cantidad = (int)$stmt->fetchColumn();
 
                     if ($cantidad > 0) {
@@ -518,57 +529,121 @@ class Negocio {
         }
     }
 
-    public function marcarBoletasFinalesVistas($idUsuario, $idRol) {
+    public function marcarAvisoReporteVisto($idUsuario, $idRol, $tipoAviso) {
         try {
             $idUsuario = (int)$idUsuario;
             $idRol = (int)$idRol;
+            $tipoAviso = trim((string)$tipoAviso);
 
-            if ($idRol !== 3) {
+            if ($tipoAviso === "boletas_finales") {
+                if ($idRol !== 3) {
+                    return [
+                        "status" => "error",
+                        "message" => "Solo el rol Docente puede marcar boletas finales como vistas."
+                    ];
+                }
+
+                $stmtU = $this->conn->prepare("
+                    SELECT CONCAT(apellidos, ', ', nombres) AS nombre_completo
+                    FROM Usuario_Sistema
+                    WHERE id_usuario = ?
+                ");
+                $stmtU->execute([$idUsuario]);
+                $nombreDocente = $stmtU->fetchColumn();
+
+                if (!$nombreDocente) {
+                    return [
+                        "status" => "error",
+                        "message" => "No se encontró el docente asociado al usuario."
+                    ];
+                }
+
+                $stmt = $this->conn->prepare("
+                    INSERT IGNORE INTO Aviso_Reporte_Visto (
+                        id_reporte,
+                        id_usuario,
+                        id_rol,
+                        tipo_aviso,
+                        fecha_visto
+                    )
+                    SELECT
+                        hr.id_reporte,
+                        ?,
+                        ?,
+                        ?,
+                        NOW()
+                    FROM Historial_Reporte hr
+                    WHERE hr.id_estado_reporte = 3
+                    AND hr.id_tipo_reporte = 1
+                    AND hr.informacion_adicional LIKE ?
+                ");
+
+                $stmt->execute([
+                    $idUsuario,
+                    $idRol,
+                    $tipoAviso,
+                    "%$nombreDocente%"
+                ]);
+
                 return [
-                    "status" => "error",
-                    "message" => "Solo el rol Docente puede marcar boletas finales como vistas."
+                    "status" => "success",
+                    "message" => "Boletas finales marcadas como vistas correctamente.",
+                    "data" => [
+                        "actualizados" => $stmt->rowCount()
+                    ]
                 ];
             }
 
-            $stmtU = $this->conn->prepare("
-                SELECT CONCAT(apellidos, ', ', nombres) AS nombre_completo
-                FROM Usuario_Sistema
-                WHERE id_usuario = ?
-            ");
-            $stmtU->execute([$idUsuario]);
-            $nombreDocente = $stmtU->fetchColumn();
+            if ($tipoAviso === "reportes_finales") {
+                if ($idRol !== 1) {
+                    return [
+                        "status" => "error",
+                        "message" => "Solo el rol Secretaría puede marcar reportes finales como vistos."
+                    ];
+                }
 
-            if (!$nombreDocente) {
+                $stmt = $this->conn->prepare("
+                    INSERT IGNORE INTO Aviso_Reporte_Visto (
+                        id_reporte,
+                        id_usuario,
+                        id_rol,
+                        tipo_aviso,
+                        fecha_visto
+                    )
+                    SELECT
+                        hr.id_reporte,
+                        ?,
+                        ?,
+                        ?,
+                        NOW()
+                    FROM Historial_Reporte hr
+                    WHERE hr.id_estado_reporte = 3
+                ");
+
+                $stmt->execute([
+                    $idUsuario,
+                    $idRol,
+                    $tipoAviso
+                ]);
+
                 return [
-                    "status" => "error",
-                    "message" => "No se encontró el docente asociado al usuario."
+                    "status" => "success",
+                    "message" => "Reportes finales marcados como vistos correctamente.",
+                    "data" => [
+                        "actualizados" => $stmt->rowCount()
+                    ]
                 ];
             }
-
-            $stmt = $this->conn->prepare("
-                UPDATE Historial_Reporte
-                SET aviso_final_visto = 1,
-                    fecha_aviso_final_visto = NOW()
-                WHERE id_estado_reporte = 3
-                AND id_tipo_reporte = 1
-                AND COALESCE(aviso_final_visto, 0) = 0
-                AND informacion_adicional LIKE ?
-            ");
-
-            $stmt->execute(["%$nombreDocente%"]);
 
             return [
-                "status" => "success",
-                "message" => "Boletas finales marcadas como vistas correctamente.",
-                "data" => [
-                    "actualizados" => $stmt->rowCount()
-                ]
+                "status" => "error",
+                "message" => "Tipo de aviso no soportado."
             ];
 
         } catch (Exception $e) {
             return [
                 "status" => "error",
-                "message" => "Error al marcar boletas finales como vistas: " . $e->getMessage()
+                "message" => "Error al marcar aviso como visto: " . $e->getMessage()
             ];
         }
     }
