@@ -9,7 +9,12 @@ import 'package:provider/provider.dart';
 import 'package:printing/printing.dart';
 
 class FirmarBoletaNotasView extends StatefulWidget {
-  const FirmarBoletaNotasView({super.key});
+  final Future<void> Function()? onAvisosActualizados;
+
+  const FirmarBoletaNotasView({
+    super.key,
+    this.onAvisosActualizados,
+  });
 
   @override
   State<FirmarBoletaNotasView> createState() => _FirmarBoletaNotasViewState();
@@ -216,7 +221,9 @@ class _FirmarBoletaNotasViewState extends State<FirmarBoletaNotasView>
       );
 
       if (res.status == 'success') {
-        _cargarReportes();
+        await _cargarReportes();
+        await widget.onAvisosActualizados?.call();
+
         _mostrarExito(
           "Completado",
           "Boleta firmada y finalizada exitosamente.",
@@ -285,7 +292,9 @@ class _FirmarBoletaNotasViewState extends State<FirmarBoletaNotasView>
       );
 
       if (res.status == 'success') {
-        _cargarReportes();
+        await _cargarReportes();
+        await widget.onAvisosActualizados?.call();
+
         _mostrarExito(
           "Lote Finalizado",
           "Todas las boletas han sido firmadas.",

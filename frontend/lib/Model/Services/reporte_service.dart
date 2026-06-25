@@ -96,8 +96,27 @@ class ReporteService {
     }
   }
 
+  Future<ApiResponse<dynamic>> marcarAvisoReporteVisto(
+    int idUsuario,
+    int idRol,
+    String tipoAviso,
+  ) async {
+    try {
+      final body = {
+        "accion": "marcar_aviso_reporte_visto",
+        "id_usuario": idUsuario,
+        "id_rol": idRol,
+        "tipo_aviso": tipoAviso,
+      };
 
-
+      return await _enviarRequest(body);
+    } catch (e) {
+      return ApiResponse(
+        status: "error",
+        message: "Error al marcar aviso como visto: $e",
+      );
+    }
+  }
 
   Future<ApiResponse<dynamic>> enviarAsistenciaExcel(
     PlatformFile file,

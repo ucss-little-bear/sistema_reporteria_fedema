@@ -9,7 +9,12 @@ import 'package:printing/printing.dart';
 import 'package:intl/intl.dart';
 
 class FirmarReportesRevisadosView extends StatefulWidget {
-  const FirmarReportesRevisadosView({super.key});
+  final Future<void> Function()? onAvisosActualizados;
+
+  const FirmarReportesRevisadosView({
+    super.key,
+    this.onAvisosActualizados,
+  });
 
   @override
   State<FirmarReportesRevisadosView> createState() =>
@@ -222,7 +227,9 @@ class _FirmarReportesRevisadosViewState
       );
 
       if (res.status == 'success') {
-        _cargarReportes();
+        await _cargarReportes();
+        await widget.onAvisosActualizados?.call();
+
         _mostrarExito(
           "Validado",
           "Firma de Secretaría registrada correctamente.",
@@ -290,7 +297,9 @@ class _FirmarReportesRevisadosViewState
       );
 
       if (res.status == 'success') {
-        _cargarReportes();
+        await _cargarReportes();
+        await widget.onAvisosActualizados?.call();
+
         _mostrarExito("Lote Procesado", "Documentos firmados y derivados.");
       } else {
         setState(() => _isLoading = false);

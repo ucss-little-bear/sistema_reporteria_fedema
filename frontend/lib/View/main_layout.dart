@@ -13,6 +13,7 @@ import 'package:frontend/View/panel_principal.dart';
 import 'package:frontend/View/reportes_finales.dart';
 import 'package:frontend/View/reportes_rendimiento.dart';
 import 'package:provider/provider.dart';
+import 'package:frontend/Model/Services/reporte_service.dart';
 
 class MainLayout extends StatefulWidget {
   const MainLayout({super.key});
@@ -24,6 +25,44 @@ class MainLayout extends StatefulWidget {
 class _MainLayoutState extends State<MainLayout> {
   int _selectedIndex = 0;
   bool _isSidebarExpanded = true;
+  final LayerLink _notificacionesLayerLink = LayerLink();
+  OverlayEntry? _notificacionesOverlay;
+
+  final ReporteService _reporteService = ReporteService();
+
+  List<Map<String, dynamic>> _avisosPendientes = [];
+  bool _cargandoAvisos = false;
+  String? _errorAvisos;
+  bool _avisosInicializados = false;
+  int? _ultimoUsuarioAvisos;
+  int? _ultimoRolAvisos;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    final usuario = Provider.of<AuthProvider>(
+      context,
+      listen: false,
+    ).usuarioActual;
+
+    if (usuario != null &&
+        (!_avisosInicializados ||
+            _ultimoUsuarioAvisos != usuario.idUsuario ||
+            _ultimoRolAvisos != usuario.idRol)) {
+      _avisosInicializados = true;
+      _ultimoUsuarioAvisos = usuario.idUsuario;
+      _ultimoRolAvisos = usuario.idRol;
+
+      Future.microtask(_cargarAvisosPendientes);
+    }
+  }
+
+  @override
+  void dispose() {
+    _cerrarPanelNotificaciones();
+    super.dispose();
+  }
 
   void _showLogoutConfirmation(BuildContext context) {
     showDialog(
@@ -82,43 +121,411 @@ class _MainLayoutState extends State<MainLayout> {
     );
   }
 
-  void _showNotificationsPreview(BuildContext context, String roleName) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        backgroundColor: Colors.white,
-        title: Row(
+  Future<void> _cargarAvisosPendientes() async {
+    final usuario = Provider.of<AuthProvider>(
+      context,
+      listen: false,
+    ).usuarioActual;
+
+    if (usuario == null) return;
+
+    setState(() {
+      _cargandoAvisos = true;
+      _errorAvisos = null;
+    });
+
+    final response = await _reporteService.obtenerAvisosPendientes(
+      usuario.idUsuario,
+      usuario.idRol,
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      _cargandoAvisos = false;
+
+      if (response.status == 'success') {
+        _avisosPendientes = response.data ?? [];
+      } else {
+        _avisosPendientes = [];
+        _errorAvisos = response.message;
+      }
+    });
+  }
+
+  int _totalAvisosPendientes() {
+    return _avisosPendientes.fold<int>(0, (total, aviso) {
+      final cantidad = int.tryParse('${aviso['cantidad'] ?? 0}') ?? 0;
+      return total + cantidad;
+    });
+  }
+
+  IconData _obtenerIconoAviso(String idAviso) {
+    switch (idAviso) {
+      case 'firmar_generados':
+        return Icons.edit_document;
+      case 'firmar_revisados':
+        return Icons.verified_user;
+      case 'reportes_finales':
+        return Icons.folder_shared;
+      case 'firmar_boletas':
+        return Icons.assignment_turned_in;
+      case 'boletas_finales':
+        return Icons.task;
+      default:
+        return Icons.notifications_none;
+    }
+  }
+
+  Color _obtenerColorAviso(String idAviso) {
+    switch (idAviso) {
+      case 'firmar_generados':
+        return Colors.orange;
+      case 'firmar_revisados':
+        return Colors.blue;
+      case 'reportes_finales':
+        return Colors.green;
+      case 'firmar_boletas':
+        return Colors.purple;
+      case 'boletas_finales':
+        return Colors.teal;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  Future<void> _navegarDesdeAviso(
+    Map<String, dynamic> aviso,
+    List<Map<String, dynamic>> menuItems,
+  ) async {
+    final moduloTitulo = aviso['modulo_titulo']?.toString() ?? '';
+    final idAviso = aviso['id']?.toString() ?? '';
+
+    final index = menuItems.indexWhere(
+      (item) => item['title'] == moduloTitulo,
+    );
+
+    _cerrarPanelNotificaciones();
+
+    if (index >= 0) {
+      setState(() {
+        _selectedIndex = index;
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'No se encontró el módulo asociado: $moduloTitulo',
+          ),
+        ),
+      );
+    }
+
+    if (idAviso == 'boletas_finales' || idAviso == 'reportes_finales') {
+      final usuario = Provider.of<AuthProvider>(
+        context,
+        listen: false,
+      ).usuarioActual;
+
+      if (usuario != null) {
+        await _reporteService.marcarAvisoReporteVisto(
+          usuario.idUsuario,
+          usuario.idRol,
+          idAviso,
+        );
+
+        if (!mounted) return;
+
+        await _cargarAvisosPendientes();
+      }
+    }
+  }
+
+  void _cerrarPanelNotificaciones() {
+    _notificacionesOverlay?.remove();
+    _notificacionesOverlay = null;
+  }
+
+  Future<void> _togglePanelNotificaciones(
+    List<Map<String, dynamic>> menuItems,
+  ) async {
+    if (_notificacionesOverlay != null) {
+      _cerrarPanelNotificaciones();
+      return;
+    }
+
+    await _cargarAvisosPendientes();
+
+    if (!mounted) return;
+
+    _notificacionesOverlay = OverlayEntry(
+      builder: (context) {
+        return Stack(
           children: [
-            Icon(
-              Icons.notifications_none,
-              color: Theme.of(context).primaryColor,
-            ),
-            const SizedBox(width: 10),
-            const Text(
-              "Avisos dinámicos",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-        content: Text(
-          "Campana visual agregada para el rol: $roleName.\n\n"
-          "En una siguiente iteración se conectará con los estados de reportes "
-          "y boletas para mostrar acciones pendientes.",
-          style: const TextStyle(color: Colors.black87),
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).primaryColor,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: _cerrarPanelNotificaciones,
+                child: Container(color: Colors.transparent),
               ),
             ),
-            child: const Text("Entendido"),
+            CompositedTransformFollower(
+              link: _notificacionesLayerLink,
+              showWhenUnlinked: false,
+              targetAnchor: Alignment.bottomRight,
+              followerAnchor: Alignment.topRight,
+              offset: const Offset(0, 10),
+              child: Material(
+                color: Colors.transparent,
+                child: _buildPanelNotificaciones(menuItems),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    Overlay.of(context).insert(_notificacionesOverlay!);
+  }
+
+  Widget _buildPanelNotificaciones(
+    List<Map<String, dynamic>> menuItems,
+  ) {
+    return Container(
+      width: MediaQuery.of(context).size.width < 500
+      ? MediaQuery.of(context).size.width - 32
+      : 420,
+      constraints: const BoxConstraints(
+        maxHeight: 460,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.grey.shade300),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.15),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
           ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.notifications_none,
+                  color: Theme.of(context).primaryColor,
+                ),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Text(
+                    "Avisos dinámicos",
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1F2937),
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.refresh, size: 20),
+                  color: Theme.of(context).primaryColor,
+                  onPressed: () async {
+                    await _cargarAvisosPendientes();
+
+                    _cerrarPanelNotificaciones();
+
+                    if (!mounted) return;
+
+                    await _togglePanelNotificaciones(menuItems);
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close, size: 20),
+                  color: Colors.grey[600],
+                  onPressed: _cerrarPanelNotificaciones,
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+
+          if (_cargandoAvisos)
+            const Padding(
+              padding: EdgeInsets.all(28),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else if (_errorAvisos != null)
+            Padding(
+              padding: const EdgeInsets.all(18),
+              child: Text(
+                _errorAvisos!,
+                style: const TextStyle(color: Colors.red),
+              ),
+            )
+          else if (_avisosPendientes.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 45, horizontal: 20),
+              child: Text(
+                "No tienes avisos pendientes.",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.black54,
+                  fontSize: 15,
+                ),
+              ),
+            )
+          else
+            Flexible(
+              child: ListView.separated(
+                shrinkWrap: true,
+                padding: const EdgeInsets.all(10),
+                itemCount: _avisosPendientes.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 8),
+                itemBuilder: (context, index) {
+                  final aviso = _avisosPendientes[index];
+                  final idAviso = aviso['id']?.toString() ?? '';
+                  final cantidad = aviso['cantidad']?.toString() ?? '0';
+                  final titulo = aviso['titulo']?.toString() ?? 'Aviso';
+                  final descripcion =
+                      aviso['descripcion']?.toString() ?? '';
+                  final moduloTitulo =
+                      aviso['modulo_titulo']?.toString() ?? '';
+
+                  final color = _obtenerColorAviso(idAviso);
+
+                  return Material(
+                    color: color.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(10),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(10),
+                      onTap: () async {
+                        await _navegarDesdeAviso(
+                          aviso,
+                          menuItems,
+                        );
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            CircleAvatar(
+                              radius: 20,
+                              backgroundColor: color.withOpacity(0.18),
+                              child: Icon(
+                                _obtenerIconoAviso(idAviso),
+                                color: color,
+                                size: 21,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "$cantidad $titulo",
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF1F2937),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    descripcion,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.black54,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 5),
+                                  Text(
+                                    "Ir a $moduloTitulo",
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: Theme.of(context).primaryColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Icon(
+                              Icons.chevron_right,
+                              color: Colors.black38,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+        ],
+      ),
+    ); 
+  }
+
+  Widget _buildNotificationButton(
+    ThemeData theme,
+    List<Map<String, dynamic>> menuItems,
+  ) {
+    final totalAvisos = _totalAvisosPendientes();
+
+    return CompositedTransformTarget(
+      link: _notificacionesLayerLink,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          IconButton(
+            icon: _cargandoAvisos
+                ? const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.notifications_none),
+            color: theme.primaryColor,
+            iconSize: 28,
+            onPressed: _cargandoAvisos
+                ? null
+                : () async {
+                    await _togglePanelNotificaciones(menuItems);
+                  },
+          ),
+          if (totalAvisos > 0)
+            Positioned(
+              right: 4,
+              top: 4,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 5,
+                  vertical: 2,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.red[700],
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                constraints: const BoxConstraints(minWidth: 18),
+                child: Text(
+                  totalAvisos > 99 ? "99+" : totalAvisos.toString(),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -168,7 +575,9 @@ class _MainLayoutState extends State<MainLayout> {
         {
           'icon': Icons.verified_user,
           'title': 'Firmar Revisados',
-          'view': const FirmarReportesRevisadosView(),
+          'view': FirmarReportesRevisadosView(
+            onAvisosActualizados: _cargarAvisosPendientes,
+          ),
         },
         {
           'icon': Icons.folder_shared,
@@ -193,7 +602,9 @@ class _MainLayoutState extends State<MainLayout> {
         {
           'icon': Icons.edit_document,
           'title': 'Firmar Generados',
-          'view': const FirmarReportesGeneradosView(),
+          'view': FirmarReportesGeneradosView(
+            onAvisosActualizados: _cargarAvisosPendientes,
+          ),
         },
         {
           'icon': Icons.analytics,
@@ -213,7 +624,9 @@ class _MainLayoutState extends State<MainLayout> {
         {
           'icon': Icons.assignment_turned_in,
           'title': 'Firmar Boletas',
-          'view': const FirmarBoletaNotasView(),
+          'view': FirmarBoletaNotasView(
+            onAvisosActualizados: _cargarAvisosPendientes,
+          ),
         },
         {
           'icon': Icons.task,
@@ -233,7 +646,6 @@ class _MainLayoutState extends State<MainLayout> {
     }
 
     final currentTitle = menuItems[_selectedIndex]['title'] as String;
-    final roleName = usuario.rolDescripcion ?? "Usuario";
 
     return Scaffold(
       body: Row(
@@ -457,16 +869,7 @@ class _MainLayoutState extends State<MainLayout> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        Tooltip(
-                          message: "Avisos dinámicos",
-                          child: IconButton(
-                            icon: const Icon(Icons.notifications_none),
-                            color: theme.primaryColor,
-                            iconSize: 28,
-                            onPressed: () =>
-                                _showNotificationsPreview(context, roleName),
-                          ),
-                        ),
+                        _buildNotificationButton(theme, menuItems),
                       ],
                     ),
                   ),

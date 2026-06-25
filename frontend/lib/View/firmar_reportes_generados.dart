@@ -9,7 +9,12 @@ import 'package:printing/printing.dart';
 import 'package:intl/intl.dart';
 
 class FirmarReportesGeneradosView extends StatefulWidget {
-  const FirmarReportesGeneradosView({super.key});
+  final Future<void> Function()? onAvisosActualizados;
+
+  const FirmarReportesGeneradosView({
+    super.key,
+    this.onAvisosActualizados,
+  });
 
   @override
   State<FirmarReportesGeneradosView> createState() =>
@@ -228,7 +233,9 @@ class _FirmarReportesGeneradosViewState
       );
 
       if (res.status == 'success') {
-        _cargarReportes();
+        await _cargarReportes();
+        await widget.onAvisosActualizados?.call();
+
         _mostrarExito(
           "Firmado",
           "Su firma digital ha sido registrada correctamente.",
@@ -298,14 +305,16 @@ class _FirmarReportesGeneradosViewState
       );
 
       if (res.status == 'success') {
-        _cargarReportes();
+        await _cargarReportes();
+        await widget.onAvisosActualizados?.call();
+
         _mostrarExito(
           "Lote Firmado",
           "Se han procesado y firmado ${lista.length} documentos.",
         );
       } else {
         setState(() => _isLoading = false);
-        _mostrarError("Error", detalle: res.message);
+      _mostrarError("Error", detalle: res.message);
       }
     }
   }
