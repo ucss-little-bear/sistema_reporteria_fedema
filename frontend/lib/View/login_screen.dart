@@ -32,13 +32,24 @@ class _LoginScreenState extends State<LoginScreen> {
         _usuarioController.text.trim(),
         _passwordController.text.trim(),
       );
-
-      if (exito && mounted) {
-        // TRUCO TEMPORAL PARA LA PRESENTACIÓN DE HOY
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const CambioPasswordObligatorioScreen()),
-        );
+      
+        if (exito && mounted) {
+        final usuario = authProvider.usuarioActual;
+        
+        // ¡LA MAGIA DEL ENRUTAMIENTO!
+        if (usuario != null && usuario.primerLogin) {
+          // Si es su primera vez, lo obligamos a cambiar la clave
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const CambioPasswordObligatorioScreen()),
+          );
+        } else {
+          // Si ya la cambió antes, entra directo al sistema
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const MainLayout()),
+          );
+        }
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

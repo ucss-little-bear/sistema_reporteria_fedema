@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/View/main_layout.dart';
 
+import 'package:provider/provider.dart';
+import 'package:frontend/Controller/auth_provider_controller.dart';
+import 'package:frontend/Controller/usuario_provider_controller.dart';
+
 class CambioPasswordObligatorioScreen extends StatefulWidget {
   const CambioPasswordObligatorioScreen({super.key});
 
@@ -35,12 +39,35 @@ class _CambioPasswordObligatorioScreenState extends State<CambioPasswordObligato
   bool get _match => _nextController.text.isNotEmpty && _nextController.text == _confirmController.text;
   bool get _canSubmit => _currentController.text.isNotEmpty && _strengthOk && _match;
 
-  void _onSubmit() {
+  void _onSubmit() async {
     if (!_canSubmit) return;
-    // Solo para la presentación visual: cambiamos a la pantalla de éxito
-    setState(() {
-      _isSuccess = true;
-    });
+
+    // Llamamos a los proveedores
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final usuarioProvider = Provider.of<UsuarioProvider>(context, listen: false);
+    final usuario = authProvider.usuarioActual;
+    
+    if (usuario == null) return;
+
+    // Conectamos con tu backend en PHP para guardar la nueva clave
+    bool success = await usuarioProvider.cambiarPassword(usuario.idUsuario, _nextController.text);
+    
+    if (success) {
+      // Apagamos el interruptor en la memoria
+      authProvider.completarPrimerLogin();
+      
+      // Mostramos la tarjeta de éxito
+      setState(() {
+        _isSuccess = true;
+      });
+    } else {
+      // Si algo falla en el servidor, avisamos
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error al conectar con el servidor.'), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   @override

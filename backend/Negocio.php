@@ -19,18 +19,14 @@ class Negocio {
         }
     }
 
-
-
-
-
     public function loginUsuario($usuario, $password) {
         try {
 
 
-            $query = "SELECT u.id_usuario, u.nombres, u.apellidos, u.id_rol, r.descripcion as rol, u.contrasena_hash, u.estado 
-                      FROM Usuario_Sistema u 
-                      JOIN Rol r ON u.id_rol = r.id_rol 
-                      WHERE u.nombre_usuario = :usuario LIMIT 1";
+            $query = "SELECT u.id_usuario, u.nombres, u.apellidos, u.id_rol, r.descripcion as rol, u.contrasena_hash, u.estado, u.primer_login
+                       FROM Usuario_Sistema u
+                       JOIN Rol r ON u.id_rol = r.id_rol
+                       WHERE u.nombre_usuario = :usuario LIMIT 1";
             
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(":usuario", $usuario);
@@ -73,7 +69,7 @@ class Negocio {
         try {
             $hash = password_hash($newPassword, PASSWORD_DEFAULT);
             
-            $query = "UPDATE Usuario_Sistema SET contrasena_hash = :pass WHERE id_usuario = :id";
+            $query = "UPDATE Usuario_Sistema SET contrasena_hash = :pass, primer_login = 0 WHERE id_usuario = :id";
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(":pass", $hash);
             $stmt->bindParam(":id", $idUsuario);
