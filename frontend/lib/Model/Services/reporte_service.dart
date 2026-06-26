@@ -123,9 +123,24 @@ class ReporteService {
     bool force = false,
   }) async {
     try {
+      final rawExt = file.name.split('.').last.toLowerCase();
+      final extension = rawExt.replaceAll(RegExp(r'[^a-z0-9]'), '');
+      
+      if (extension != 'xls' && extension != 'xlsx') {
+        return ApiResponse(
+            status: "error", 
+            message: "Formato inválido. Solo se admiten archivos Excel (.xls, .xlsx)."
+        );
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        return ApiResponse(
+            status: "error", 
+            message: "El archivo excede el límite máximo de 5MB."
+        );
+      }
+
       List<int> bytes = _obtenerBytes(file);
-      if (bytes.isEmpty)
-        return ApiResponse(status: "error", message: "Archivo vacío.");
+      if (bytes.isEmpty) return ApiResponse(status: "error", message: "Archivo vacío.");
 
       var excel;
       try {
@@ -159,13 +174,11 @@ class ReporteService {
 
       return await _enviarRequest(body);
     } catch (e) {
-      return ApiResponse(
-        status: "error",
-        message: "Error procesando asistencia: $e",
-      );
+      return ApiResponse(status: "error", message: "Error procesando asistencia: $e");
     }
   }
 
+  // CR-SDRF-4: Validación de seguridad replicada para el módulo de Calificaciones.
   Future<ApiResponse<dynamic>> enviarNotasExcel(
     PlatformFile file,
     int idUsuario, {
@@ -173,9 +186,24 @@ class ReporteService {
     bool force = false,
   }) async {
     try {
+      final rawExt = file.name.split('.').last.toLowerCase();
+      final extension = rawExt.replaceAll(RegExp(r'[^a-z0-9]'), '');
+
+      if (extension != 'xls' && extension != 'xlsx') {
+        return ApiResponse(
+            status: "error", 
+            message: "Formato inválido. Las Notas requieren estrictamente archivos Excel (.xls, .xlsx)."
+        );
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        return ApiResponse(
+            status: "error", 
+            message: "El archivo excede el límite máximo de 5MB."
+        );
+      }
+
       List<int> bytes = _obtenerBytes(file);
-      if (bytes.isEmpty)
-        return ApiResponse(status: "error", message: "Archivo vacío.");
+      if (bytes.isEmpty) return ApiResponse(status: "error", message: "Archivo vacío.");
 
       var excel;
       try {
@@ -211,10 +239,7 @@ class ReporteService {
 
       return await _enviarRequest(body);
     } catch (e) {
-      return ApiResponse(
-        status: "error",
-        message: "Error procesando notas: $e",
-      );
+      return ApiResponse(status: "error", message: "Error procesando notas: $e");
     }
   }
 
