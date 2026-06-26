@@ -7,6 +7,7 @@ class Usuario {
   final String nombreUsuario;
   final String? correo;
   final String? rolDescripcion;
+  final bool tienePinConfigurado;
   final int estado;
 
   Usuario({
@@ -18,6 +19,7 @@ class Usuario {
     required this.nombreUsuario,
     this.correo,
     this.rolDescripcion,
+    required this.tienePinConfigurado,
     required this.estado,
   });
 
@@ -32,6 +34,7 @@ class Usuario {
       nombreUsuario: json['nombre_usuario'] ?? '',
       correo: json['correo'] ?? '',
       rolDescripcion: json['rol'],
+      tienePinConfigurado: json['tienePinConfigurado'] ?? false,
       estado: json['estado'] != null ? int.parse(json['estado'].toString()) : 1,
     );
   }
@@ -48,5 +51,31 @@ class Usuario {
       'rol': rolDescripcion,
       'estado': estado,
     };
+  }
+
+  Usuario copyWith({
+    int? idUsuario,
+    int? idRol,
+    String? nombres,
+    String? apellidos,
+    int? dni,
+    String? nombreUsuario,
+    String? correo,
+    String? rolDescripcion,
+    int? estado,
+    bool? tienePinConfigurado,
+  }) {
+    return Usuario(
+      idUsuario: idUsuario ?? this.idUsuario,
+      idRol: idRol ?? this.idRol,
+      nombres: nombres ?? this.nombres,
+      apellidos: apellidos ?? this.apellidos,
+      dni: dni ?? this.dni, // Mantiene el actual si no se pasa uno nuevo
+      nombreUsuario: nombreUsuario ?? this.nombreUsuario,
+      correo: correo ?? this.correo,
+      rolDescripcion: rolDescripcion ?? this.rolDescripcion,
+      estado: estado ?? this.estado,
+      tienePinConfigurado: tienePinConfigurado ?? this.tienePinConfigurado,
+    );
   }
 }

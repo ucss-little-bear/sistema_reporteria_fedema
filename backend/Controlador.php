@@ -105,6 +105,31 @@ try {
             }
             break;
 
+        case 'crear_pin':
+            if (isset($data->id_usuario) && isset($data->pin)) {
+                $response = $negocio->crearPinFirma($data->id_usuario, $data->pin);
+            } else {
+                $response = ["status" => "error", "message" => "Datos incompletos para crear PIN."];
+            }
+            break;
+
+        case 'verificar_pin':
+            if (isset($data->id_usuario) && isset($data->pin)) {
+                $response = $negocio->verificarPinFirma($data->id_usuario, $data->pin);
+            } else {
+                $response = ["status" => "error", "message" => "Datos incompletos para verificar PIN."];
+            }
+            break;
+
+        case 'resetear_pin':
+            if (isset($data->id_usuario)) {
+                // Aquí asumimos que la secretaria está logueada.
+                $response = $negocio->resetearPinFirma($data->id_usuario);
+            } else {
+                $response = ["status" => "error", "message" => "ID de usuario requerido para el reseteo."];
+            }
+            break;
+
         case 'listar_reportes':
 
             $idU = $data->id_usuario ?? 0;

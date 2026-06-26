@@ -27,7 +27,7 @@ class Negocio {
         try {
 
 
-            $query = "SELECT u.id_usuario, u.nombres, u.apellidos, u.id_rol, r.descripcion as rol, u.contrasena_hash, u.estado 
+            $query = "SELECT u.id_usuario, u.nombres, u.apellidos, u.id_rol, r.descripcion as rol, u.contrasena_hash, u.estado, u.pin_firma 
                       FROM Usuario_Sistema u 
                       JOIN Rol r ON u.id_rol = r.id_rol 
                       WHERE u.nombre_usuario = :usuario LIMIT 1";
@@ -54,7 +54,12 @@ class Negocio {
 
                 if (password_verify($password, $row['contrasena_hash'])) {
 
+                    $row['tienePinConfigurado'] = ($row['pin_firma'] !== null && trim($row['pin_firma']) !== '');
+                    
+                    // Borramos los hashes antes de enviarlo al frontend por seguridad
                     unset($row['contrasena_hash']);
+                    unset($row['pin_firma']); 
+                    
                     return ["status" => "success", "data" => $row];
                 } else {
                     return ["status" => "error", "message" => "Contraseña incorrecta."];
@@ -1374,6 +1379,61 @@ class Negocio {
 
         $fecha = date("d/m/Y H:i:s");
         return "Firmado digitalmente por: {$u['nombres']} {$u['apellidos']}\nDNI: {$u['dni']}\nCorreo: {$u['correo']}\nFecha: $fecha";
+    }
+
+    public function crearPinFirma($idUsuario, $pin) {
+        try {
+            // Reutilizamos el hasheo nativo de PHP
+            $hash = password_hash($pin, PASSWORD_DEFAULT);
+            
+            $query = "UPDATE usuario_sistema SET pin_firma = :pin WHERE id_usuario = :id";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(":pin", $hash);
+            $stmt->bindParam(":id", $idUsuario);
+
+            if ($stmt->execute()) {
+                return ["status" => "success", "message" => "PIN creado correctamente."];
+            }
+            return ["status" => "error", "message" => "No se pudo guardar el PIN."];
+        } catch (PDOException $e) {
+            return ["status" => "error", "message" => "Error BD: " . $e->getMessage()];
+        }
+    }
+
+    public function verificarPinFirma($idUsuario, $pin) {
+        try {
+            $query = "SELECT pin_firma FROM Usuario_Sistema WHERE id_usuario = :id";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(":id", $idUsuario);
+            $stmt->execute();
+            
+            $hashGuardado = $stmt->fetchColumn();
+            
+            // Reutilizamos la verificación de hash
+            if ($hashGuardado && password_verify($pin, $hashGuardado)) {
+                return ["status" => "success", "message" => "PIN válido. Autorizado para firmar."];
+            } else {
+                return ["status" => "error", "message" => "El PIN ingresado es incorrecto."];
+            }
+        } catch (PDOException $e) {
+            return ["status" => "error", "message" => "Error BD: " . $e->getMessage()];
+        }
+    }
+
+    public function resetearPinFirma($idUsuario) {
+        try {
+            // Lo devolvemos a NULL para que el sistema le vuelva a pedir crearlo
+            $query = "UPDATE Usuario_Sistema SET pin_firma = NULL WHERE id_usuario = :id";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(":id", $idUsuario);
+
+            if ($stmt->execute()) {
+                return ["status" => "success", "message" => "PIN reseteado correctamente."];
+            }
+            return ["status" => "error", "message" => "No se pudo resetear el PIN."];
+        } catch (PDOException $e) {
+            return ["status" => "error", "message" => "Error BD: " . $e->getMessage()];
+        }
     }
 }
 ?>

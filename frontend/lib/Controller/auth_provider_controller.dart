@@ -10,12 +10,10 @@ class AuthProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
 
-
   Usuario? get usuarioActual => _usuarioActual;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   bool get estaAutenticado => _usuarioActual != null;
-
 
   Future<bool> login(String usuario, String password) async {
     _setLoading(true);
@@ -43,16 +41,21 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-
   void logout() {
     _usuarioActual = null;
     _errorMessage = null;
     notifyListeners();
   }
 
-
   void _setLoading(bool valor) {
     _isLoading = valor;
     notifyListeners();
+  }
+
+  void actualizarEstadoPin(bool estado) {
+    if (_usuarioActual != null) {
+      _usuarioActual = _usuarioActual!.copyWith(tienePinConfigurado: estado);
+      notifyListeners();
+    }
   }
 }

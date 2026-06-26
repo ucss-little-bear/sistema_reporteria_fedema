@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:frontend/Controller/auth_provider_controller.dart';
+import 'package:frontend/Model/Services/usuario_service.dart';
 
 class CrearPinDialog extends StatefulWidget {
   const CrearPinDialog({super.key});
@@ -27,8 +30,7 @@ class _CrearPinDialogState extends State<CrearPinDialog> {
     }
   }
 
-  Widget _buildKeypadButton(String label,
-      {VoidCallback? onPressed, IconData? icon}) {
+  Widget _buildKeypadButton(String label, {VoidCallback? onPressed, IconData? icon}) {
     return Material(
       color: Colors.grey[100],
       borderRadius: BorderRadius.circular(12),
@@ -99,9 +101,7 @@ class _CrearPinDialogState extends State<CrearPinDialog> {
                       height: 45,
                       decoration: BoxDecoration(
                         border: Border.all(
-                          color: index < _pin.length
-                              ? Colors.blue
-                              : Colors.grey[300]!,
+                          color: index < _pin.length ? Colors.blue : Colors.grey[300]!,
                           width: 2,
                         ),
                         borderRadius: BorderRadius.circular(8),
@@ -137,52 +137,10 @@ class _CrearPinDialogState extends State<CrearPinDialog> {
             // Teclado Numérico
             Column(
               children: [
-                Row(
-                  children: [
-                    Expanded(child: _buildKeypadButton('1')),
-                    const SizedBox(width: 12),
-                    Expanded(child: _buildKeypadButton('2')),
-                    const SizedBox(width: 12),
-                    Expanded(child: _buildKeypadButton('3')),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(child: _buildKeypadButton('4')),
-                    const SizedBox(width: 12),
-                    Expanded(child: _buildKeypadButton('5')),
-                    const SizedBox(width: 12),
-                    Expanded(child: _buildKeypadButton('6')),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(child: _buildKeypadButton('7')),
-                    const SizedBox(width: 12),
-                    Expanded(child: _buildKeypadButton('8')),
-                    const SizedBox(width: 12),
-                    Expanded(child: _buildKeypadButton('9')),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    const Expanded(
-                        child: SizedBox()), // Espacio vacío decorativo
-                    const SizedBox(width: 12),
-                    Expanded(child: _buildKeypadButton('0')),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildKeypadButton(
-                        '',
-                        onPressed: _onBackspace,
-                        icon: Icons.backspace_outlined,
-                      ),
-                    ),
-                  ],
-                ),
+                Row(children: [Expanded(child: _buildKeypadButton('1')), const SizedBox(width: 12), Expanded(child: _buildKeypadButton('2')), const SizedBox(width: 12), Expanded(child: _buildKeypadButton('3'))]), const SizedBox(height: 12),
+                Row(children: [Expanded(child: _buildKeypadButton('4')), const SizedBox(width: 12), Expanded(child: _buildKeypadButton('5')), const SizedBox(width: 12), Expanded(child: _buildKeypadButton('6'))]), const SizedBox(height: 12),
+                Row(children: [Expanded(child: _buildKeypadButton('7')), const SizedBox(width: 12), Expanded(child: _buildKeypadButton('8')), const SizedBox(width: 12), Expanded(child: _buildKeypadButton('9'))]), const SizedBox(height: 12),
+                Row(children: [const Expanded(child: SizedBox()), const SizedBox(width: 12), Expanded(child: _buildKeypadButton('0')), const SizedBox(width: 12), Expanded(child: _buildKeypadButton('', onPressed: _onBackspace, icon: Icons.backspace_outlined))]),
               ],
             ),
             const SizedBox(height: 28),
@@ -193,25 +151,52 @@ class _CrearPinDialogState extends State<CrearPinDialog> {
               children: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  style:
-                      TextButton.styleFrom(foregroundColor: Colors.grey[700]),
+                  style: TextButton.styleFrom(foregroundColor: Colors.grey[700]),
                   child: const Text("Cancelar"),
                 ),
                 const SizedBox(width: 12),
+                
+                // ===== BOTÓN GUARDAR CON DEBUG =====
                 ElevatedButton(
                   onPressed: _pin.length == 4
-                      ? () {
-                          // TODO: Integrar lógica del Provider en el paso final
-                          Navigator.of(context).pop();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                  "Avance visual: ¡PIN capturado con éxito!"),
-                              backgroundColor: Colors.green,
-                            ),
-                          );
+                      ? () async {
+                          print("--------------------------------");
+                          print("Paso 1: Botón Guardar PIN presionado");
+                          try {
+                            final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                            final usuario = authProvider.usuarioActual;
+                            
+                            if (usuario == null) {
+                              print("Paso 1.5 ERROR FATAL: El usuario actual es NULL en el provider.");
+                              return;
+                            }
+                            
+                            final idUsuario = usuario.idUsuario;
+                            print("Paso 2: Proveedor leído. Llamando servicio para Usuario ID: $idUsuario");
+                            
+                            bool exito = await UsuarioService().crearPinFirma(idUsuario, _pin);
+                            
+                            print("Paso 3: Respuesta del servicio terminada. ¿Éxito?: $exito");
+                            
+                            if (!context.mounted) return;
+                            
+                            if (exito) {
+                              authProvider.actualizarEstadoPin(true);
+                              Navigator.of(context).pop();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text("PIN creado exitosamente"), backgroundColor: Colors.green),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text("Error al crear PIN"), backgroundColor: Colors.red),
+                              );
+                            }
+                          } catch (e) {
+                            print("Paso ERROR: Hubo un fallo en la interfaz de Flutter: $e");
+                          }
+                          print("--------------------------------");
                         }
-                      : null, // Deshabilitado si no hay 4 dígitos
+                      : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue[700],
                     foregroundColor: Colors.white,
