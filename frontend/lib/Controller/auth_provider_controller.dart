@@ -55,6 +55,7 @@ class AuthProvider extends ChangeNotifier {
         rolDescripcion: _usuarioActual!.rolDescripcion,
         estado: _usuarioActual!.estado,
         primerLogin: false, // Lo pasamos a falso
+        tienePinConfigurado: _usuarioActual!.tienePinConfigurado,
       );
       notifyListeners();
     }

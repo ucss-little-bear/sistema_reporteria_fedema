@@ -2,6 +2,7 @@ import 'package:frontend/Controller/auth_provider_controller.dart';
 import 'package:frontend/Model/Entities/reporte_entity.dart';
 import 'package:frontend/Model/Services/pdf_generator_service.dart';
 import 'package:frontend/Model/Services/reporte_service.dart';
+import 'package:frontend/View/validar_pin_dialog.dart';
 import 'package:pdf/pdf.dart';
 import 'package:flutter/material.dart';
 
@@ -11,10 +12,7 @@ import 'package:printing/printing.dart';
 class FirmarBoletaNotasView extends StatefulWidget {
   final Future<void> Function()? onAvisosActualizados;
 
-  const FirmarBoletaNotasView({
-    super.key,
-    this.onAvisosActualizados,
-  });
+  const FirmarBoletaNotasView({super.key, this.onAvisosActualizados});
 
   @override
   State<FirmarBoletaNotasView> createState() => _FirmarBoletaNotasViewState();
@@ -26,8 +24,6 @@ class _FirmarBoletaNotasViewState extends State<FirmarBoletaNotasView>
   final PdfGeneratorService _pdfService = PdfGeneratorService();
 
   bool _isLoading = true;
-
-
 
   Map<String, List<Reporte>> _boletasAgrupadas = {};
 
@@ -47,7 +43,6 @@ class _FirmarBoletaNotasViewState extends State<FirmarBoletaNotasView>
     super.dispose();
   }
 
-
   Future<void> _cargarReportes() async {
     setState(() => _isLoading = true);
     final usuario = Provider.of<AuthProvider>(
@@ -62,8 +57,6 @@ class _FirmarBoletaNotasViewState extends State<FirmarBoletaNotasView>
         usuario.idRol,
       );
       if (res.status == 'success' && res.data != null) {
-
-
         final pendientes = res.data!
             .where(
               (r) =>
@@ -84,13 +77,11 @@ class _FirmarBoletaNotasViewState extends State<FirmarBoletaNotasView>
   void _distribuirDatos(List<Reporte> data) {
     _boletasAgrupadas.clear();
     for (var r in data) {
-
       String k = r.informacionAdicional ?? "Otros";
       if (!_boletasAgrupadas.containsKey(k)) _boletasAgrupadas[k] = [];
       _boletasAgrupadas[k]!.add(r);
     }
   }
-
 
   Future<void> _verPdf(Reporte r) async {
     showDialog(
@@ -104,7 +95,6 @@ class _FirmarBoletaNotasViewState extends State<FirmarBoletaNotasView>
       Navigator.pop(context);
 
       if (resData.status == 'success') {
-
         final bytes = await _pdfService.generarPdf(resData.data!);
 
         if (mounted) {
@@ -166,9 +156,26 @@ class _FirmarBoletaNotasViewState extends State<FirmarBoletaNotasView>
     }
   }
 
-
   Future<void> _confirmarFirma(Reporte r) async {
-    bool ok =
+    final usuario = Provider.of<AuthProvider>(
+      context,
+      listen: false,
+    ).usuarioActual;
+    if (usuario == null) return;
+
+    if (usuario.tienePinConfigurado == false) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "Acción denegada: Debe configurar su PIN de firma en el panel lateral primero.",
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    bool confirmarAccion =
         await showDialog<bool>(
           context: context,
           builder: (c) => AlertDialog(
@@ -177,13 +184,13 @@ class _FirmarBoletaNotasViewState extends State<FirmarBoletaNotasView>
             ),
             title: Row(
               children: const [
-                Icon(Icons.history_edu, color: Colors.blueAccent),
+                Icon(Icons.verified_user, color: Colors.blue),
                 SizedBox(width: 10),
-                Text("Firma Final Docente"),
+                Text("Firma Digital Definitiva"),
               ],
             ),
             content: const Text(
-              "Al firmar, la boleta pasará a estado 'Final' y estará lista para su entrega.\nSe estamparán sus credenciales.",
+              "Al firmar este documento revisado, se aplicará su estampa digital oficial.\n¿Desea proceder a validar su identidad?",
             ),
             actions: [
               TextButton(
@@ -192,9 +199,9 @@ class _FirmarBoletaNotasViewState extends State<FirmarBoletaNotasView>
               ),
               ElevatedButton.icon(
                 icon: const Icon(Icons.edit_document, size: 16),
-                label: const Text("Firmar y Finalizar"),
+                label: const Text("Proceder a Validar"),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blueAccent[700],
+                  backgroundColor: Colors.blue[700],
                   foregroundColor: Colors.white,
                 ),
                 onPressed: () => Navigator.pop(c, true),
@@ -204,43 +211,61 @@ class _FirmarBoletaNotasViewState extends State<FirmarBoletaNotasView>
         ) ??
         false;
 
-    if (ok) {
-      final usuario = Provider.of<AuthProvider>(
-        context,
-        listen: false,
-      ).usuarioActual;
-      if (usuario == null) return;
+    if (confirmarAccion) {
+      bool pinValido =
+          await showDialog<bool>(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => const ValidarPinDialog(),
+          ) ??
+          false;
 
-      setState(() => _isLoading = true);
+      if (pinValido) {
+        setState(() => _isLoading = true);
 
-
-      final res = await _service.firmarReporte(
-        r.idReporte,
-        usuario.idUsuario,
-        usuario.idRol,
-      );
-
-      if (res.status == 'success') {
-        await _cargarReportes();
-        await widget.onAvisosActualizados?.call();
-
-        _mostrarExito(
-          "Completado",
-          "Boleta firmada y finalizada exitosamente.",
+        final res = await _service.firmarReporte(
+          r.idReporte,
+          usuario.idUsuario,
+          usuario.idRol,
         );
-      } else {
-        setState(() => _isLoading = false);
-        _mostrarError("Error al firmar", detalle: res.message);
+
+        if (res.status == 'success') {
+          _cargarReportes();
+          _mostrarExito(
+            "Firmado",
+            "Su firma digital ha sido registrada correctamente.",
+          );
+        } else {
+          setState(() => _isLoading = false);
+          _mostrarError("Error al firmar", detalle: res.message);
+        }
       }
     }
   }
 
   Future<void> _confirmarFirmaLote(String key, List<Reporte> lista) async {
+    final usuario = Provider.of<AuthProvider>(
+      context,
+      listen: false,
+    ).usuarioActual;
+    if (usuario == null) return;
+
+    if (usuario.tienePinConfigurado == false) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "Acción denegada: Debe configurar su PIN de firma en el panel lateral primero.",
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
     List<String> p = key.split('|');
     String salon = p.length > 3 ? "${p[2]} - ${p[3]}" : "este salón";
 
-    bool ok =
+    bool confirmarAccion =
         await showDialog<bool>(
           context: context,
           builder: (c) => AlertDialog(
@@ -249,13 +274,13 @@ class _FirmarBoletaNotasViewState extends State<FirmarBoletaNotasView>
             ),
             title: Row(
               children: const [
-                Icon(Icons.rule_folder, color: Colors.indigo),
+                Icon(Icons.folder_special, color: Colors.purple),
                 SizedBox(width: 10),
-                Text("Firma Masiva Docente"),
+                Text("Firma Masiva de Revisados"),
               ],
             ),
             content: Text(
-              "¿Firmar y finalizar las ${lista.length} boletas de $salon?\nEsta acción completará el ciclo de aprobación.",
+              "Está a punto de firmar digitalmente ${lista.length} documentos revisados del salón $salon.\n¿Desea proceder a validar su identidad?",
             ),
             actions: [
               TextButton(
@@ -264,44 +289,46 @@ class _FirmarBoletaNotasViewState extends State<FirmarBoletaNotasView>
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.indigo,
+                  backgroundColor: Colors.purple,
                   foregroundColor: Colors.white,
                 ),
                 onPressed: () => Navigator.pop(c, true),
-                child: const Text("Finalizar Todo"),
+                child: const Text("Proceder a Validar"),
               ),
             ],
           ),
         ) ??
         false;
 
-    if (ok) {
-      final usuario = Provider.of<AuthProvider>(
-        context,
-        listen: false,
-      ).usuarioActual;
-      if (usuario == null) return;
+    if (confirmarAccion) {
+      bool pinValido =
+          await showDialog<bool>(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => const ValidarPinDialog(),
+          ) ??
+          false;
 
-      setState(() => _isLoading = true);
-      final ids = lista.map((e) => e.idReporte).toList();
+      if (pinValido) {
+        setState(() => _isLoading = true);
+        final ids = lista.map((e) => e.idReporte).toList();
 
-      final res = await _service.firmarLote(
-        ids,
-        usuario.idUsuario,
-        usuario.idRol,
-      );
-
-      if (res.status == 'success') {
-        await _cargarReportes();
-        await widget.onAvisosActualizados?.call();
-
-        _mostrarExito(
-          "Lote Finalizado",
-          "Todas las boletas han sido firmadas.",
+        final res = await _service.firmarLote(
+          ids,
+          usuario.idUsuario,
+          usuario.idRol,
         );
-      } else {
-        setState(() => _isLoading = false);
-        _mostrarError("Error", detalle: res.message);
+
+        if (res.status == 'success') {
+          _cargarReportes();
+          _mostrarExito(
+            "Lote Firmado",
+            "Se han procesado y firmado ${lista.length} documentos revisados.",
+          );
+        } else {
+          setState(() => _isLoading = false);
+          _mostrarError("Error", detalle: res.message);
+        }
       }
     }
   }
@@ -318,7 +345,6 @@ class _FirmarBoletaNotasViewState extends State<FirmarBoletaNotasView>
     }
     return params.split('|')[0];
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -348,7 +374,6 @@ class _FirmarBoletaNotasViewState extends State<FirmarBoletaNotasView>
             ),
           ),
           const SizedBox(height: 25),
-
 
           Container(
             decoration: BoxDecoration(

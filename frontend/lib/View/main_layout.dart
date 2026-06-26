@@ -202,9 +202,7 @@ class _MainLayoutState extends State<MainLayout> {
     final moduloTitulo = aviso['modulo_titulo']?.toString() ?? '';
     final idAviso = aviso['id']?.toString() ?? '';
 
-    final index = menuItems.indexWhere(
-      (item) => item['title'] == moduloTitulo,
-    );
+    final index = menuItems.indexWhere((item) => item['title'] == moduloTitulo);
 
     _cerrarPanelNotificaciones();
 
@@ -215,9 +213,7 @@ class _MainLayoutState extends State<MainLayout> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'No se encontró el módulo asociado: $moduloTitulo',
-          ),
+          content: Text('No se encontró el módulo asociado: $moduloTitulo'),
         ),
       );
     }
@@ -289,16 +285,12 @@ class _MainLayoutState extends State<MainLayout> {
     Overlay.of(context).insert(_notificacionesOverlay!);
   }
 
-  Widget _buildPanelNotificaciones(
-    List<Map<String, dynamic>> menuItems,
-  ) {
+  Widget _buildPanelNotificaciones(List<Map<String, dynamic>> menuItems) {
     return Container(
       width: MediaQuery.of(context).size.width < 500
-      ? MediaQuery.of(context).size.width - 32
-      : 420,
-      constraints: const BoxConstraints(
-        maxHeight: 460,
-      ),
+          ? MediaQuery.of(context).size.width - 32
+          : 420,
+      constraints: const BoxConstraints(maxHeight: 460),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
@@ -375,10 +367,7 @@ class _MainLayoutState extends State<MainLayout> {
               child: Text(
                 "No tienes avisos pendientes.",
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.black54,
-                  fontSize: 15,
-                ),
+                style: TextStyle(color: Colors.black54, fontSize: 15),
               ),
             )
           else
@@ -393,10 +382,8 @@ class _MainLayoutState extends State<MainLayout> {
                   final idAviso = aviso['id']?.toString() ?? '';
                   final cantidad = aviso['cantidad']?.toString() ?? '0';
                   final titulo = aviso['titulo']?.toString() ?? 'Aviso';
-                  final descripcion =
-                      aviso['descripcion']?.toString() ?? '';
-                  final moduloTitulo =
-                      aviso['modulo_titulo']?.toString() ?? '';
+                  final descripcion = aviso['descripcion']?.toString() ?? '';
+                  final moduloTitulo = aviso['modulo_titulo']?.toString() ?? '';
 
                   final color = _obtenerColorAviso(idAviso);
 
@@ -406,10 +393,7 @@ class _MainLayoutState extends State<MainLayout> {
                     child: InkWell(
                       borderRadius: BorderRadius.circular(10),
                       onTap: () async {
-                        await _navegarDesdeAviso(
-                          aviso,
-                          menuItems,
-                        );
+                        await _navegarDesdeAviso(aviso, menuItems);
                       },
                       child: Padding(
                         padding: const EdgeInsets.all(12),
@@ -428,8 +412,7 @@ class _MainLayoutState extends State<MainLayout> {
                             const SizedBox(width: 12),
                             Expanded(
                               child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     "$cantidad $titulo",
@@ -472,7 +455,7 @@ class _MainLayoutState extends State<MainLayout> {
             ),
         ],
       ),
-    ); 
+    );
   }
 
   Widget _buildNotificationButton(
@@ -507,10 +490,7 @@ class _MainLayoutState extends State<MainLayout> {
               right: 4,
               top: 4,
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 5,
-                  vertical: 2,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                 decoration: BoxDecoration(
                   color: Colors.red[700],
                   borderRadius: BorderRadius.circular(10),
@@ -759,9 +739,14 @@ class _MainLayoutState extends State<MainLayout> {
                 // ===== INICIO DEL CAMBIO VISUAL: AVISO PIN CONFIGURACIÓN =====
                 if (usuario.tienePinConfigurado == false) ...[
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     child: Tooltip(
-                      message: _isSidebarExpanded ? "" : "Falta configurar PIN de firma",
+                      message: _isSidebarExpanded
+                          ? ""
+                          : "Falta configurar PIN de firma",
                       child: InkWell(
                         onTap: () {
                           showDialog(
@@ -780,19 +765,26 @@ class _MainLayoutState extends State<MainLayout> {
                           decoration: BoxDecoration(
                             color: Colors.amber.withOpacity(0.15),
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.amber.withOpacity(0.3)),
+                            border: Border.all(
+                              color: Colors.amber.withOpacity(0.3),
+                            ),
                           ),
                           child: Row(
                             mainAxisAlignment: _isSidebarExpanded
                                 ? MainAxisAlignment.start
                                 : MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.vpn_key_outlined, color: Colors.amber[400], size: 20),
+                              Icon(
+                                Icons.vpn_key_outlined,
+                                color: Colors.amber[400],
+                                size: 20,
+                              ),
                               if (_isSidebarExpanded) ...[
                                 const SizedBox(width: 12),
                                 const Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         "Falta configurar PIN",
@@ -909,10 +901,6 @@ class _MainLayoutState extends State<MainLayout> {
               ],
             ),
           ),
-<<<<<<< HEAD
-
-=======
->>>>>>> seguridad/SDRF-2-implementación-de-pin-de-seguridad-para-firmas-mansilla
           Expanded(
             child: Container(
               color: const Color(0xFFF5F6FA),

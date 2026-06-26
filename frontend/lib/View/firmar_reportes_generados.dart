@@ -12,10 +12,7 @@ import 'package:intl/intl.dart';
 class FirmarReportesGeneradosView extends StatefulWidget {
   final Future<void> Function()? onAvisosActualizados;
 
-  const FirmarReportesGeneradosView({
-    super.key,
-    this.onAvisosActualizados,
-  });
+  const FirmarReportesGeneradosView({super.key, this.onAvisosActualizados});
 
   @override
   State<FirmarReportesGeneradosView> createState() =>
@@ -237,33 +234,33 @@ class _FirmarReportesGeneradosViewState
       if (pinValido) {
         setState(() => _isLoading = true);
 
-      setState(() => _isLoading = true);
+        setState(() => _isLoading = true);
 
-
-      final res = await _service.firmarReporte(
-        r.idReporte,
-        usuario.idUsuario,
-        usuario.idRol,
-      );
-
-      if (res.status == 'success') {
-        await _cargarReportes();
-        await widget.onAvisosActualizados?.call();
-
-        _mostrarExito(
-          "Firmado",
-          "Su firma digital ha sido registrada correctamente.",
+        final res = await _service.firmarReporte(
+          r.idReporte,
+          usuario.idUsuario,
+          usuario.idRol,
         );
 
         if (res.status == 'success') {
-          _cargarReportes();
+          await _cargarReportes();
+          await widget.onAvisosActualizados?.call();
+
           _mostrarExito(
             "Firmado",
             "Su firma digital ha sido registrada correctamente.",
           );
-        } else {
-          setState(() => _isLoading = false);
-          _mostrarError("Error al firmar", detalle: res.message);
+
+          if (res.status == 'success') {
+            _cargarReportes();
+            _mostrarExito(
+              "Firmado",
+              "Su firma digital ha sido registrada correctamente.",
+            );
+          } else {
+            setState(() => _isLoading = false);
+            _mostrarError("Error al firmar", detalle: res.message);
+          }
         }
       }
     }
