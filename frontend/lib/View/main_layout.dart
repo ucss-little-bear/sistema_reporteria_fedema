@@ -12,6 +12,7 @@ import 'package:frontend/View/login_screen.dart';
 import 'package:frontend/View/panel_principal.dart';
 import 'package:frontend/View/reportes_finales.dart';
 import 'package:frontend/View/reportes_rendimiento.dart';
+import 'package:frontend/View/crear_pin_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:frontend/Model/Services/reporte_service.dart';
 
@@ -677,7 +678,6 @@ class _MainLayoutState extends State<MainLayout> {
                           size: 24,
                         ),
                       ),
-
                       if (_isSidebarExpanded) ...[
                         const SizedBox(width: 12),
                         const Expanded(
@@ -756,6 +756,74 @@ class _MainLayoutState extends State<MainLayout> {
                   const SizedBox(height: 20),
                 ],
 
+                // ===== INICIO DEL CAMBIO VISUAL: AVISO PIN CONFIGURACIÓN =====
+                if (usuario.tienePinConfigurado == false) ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    child: Tooltip(
+                      message: _isSidebarExpanded ? "" : "Falta configurar PIN de firma",
+                      child: InkWell(
+                        onTap: () {
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (context) => const CrearPinDialog(),
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(8),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: EdgeInsets.symmetric(
+                            vertical: 10,
+                            horizontal: _isSidebarExpanded ? 12 : 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.amber.withOpacity(0.3)),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: _isSidebarExpanded
+                                ? MainAxisAlignment.start
+                                : MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.vpn_key_outlined, color: Colors.amber[400], size: 20),
+                              if (_isSidebarExpanded) ...[
+                                const SizedBox(width: 12),
+                                const Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        "Falta configurar PIN",
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                      SizedBox(height: 2),
+                                      Text(
+                                        "Click para crear",
+                                        style: TextStyle(
+                                          color: Colors.white60,
+                                          fontSize: 11,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+
+                // ===== FIN DEL CAMBIO VISUAL =====
                 const Divider(color: Colors.white10, height: 1),
                 const SizedBox(height: 8),
 
@@ -841,7 +909,10 @@ class _MainLayoutState extends State<MainLayout> {
               ],
             ),
           ),
+<<<<<<< HEAD
 
+=======
+>>>>>>> seguridad/SDRF-2-implementación-de-pin-de-seguridad-para-firmas-mansilla
           Expanded(
             child: Container(
               color: const Color(0xFFF5F6FA),

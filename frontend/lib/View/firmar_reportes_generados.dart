@@ -4,6 +4,7 @@ import 'package:frontend/Controller/auth_provider_controller.dart';
 import 'package:frontend/Model/Entities/reporte_entity.dart';
 import 'package:frontend/Model/Services/pdf_generator_service.dart';
 import 'package:frontend/Model/Services/reporte_service.dart';
+import 'package:frontend/View/validar_pin_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:printing/printing.dart';
 import 'package:intl/intl.dart';
@@ -29,7 +30,6 @@ class _FirmarReportesGeneradosViewState
 
   bool _isLoading = true;
 
-
   Map<String, List<Reporte>> _boletasAgrupadas = {};
   List<Reporte> _listaRendimiento = [];
   List<Reporte> _listaCertificados = [];
@@ -49,7 +49,6 @@ class _FirmarReportesGeneradosViewState
     super.dispose();
   }
 
-
   Future<void> _cargarReportes() async {
     setState(() => _isLoading = true);
     final usuario = Provider.of<AuthProvider>(
@@ -64,8 +63,6 @@ class _FirmarReportesGeneradosViewState
         usuario.idRol,
       );
       if (res.status == 'success' && res.data != null) {
-
-
         final pendientes = res.data!
             .where((r) => r.idEstadoReporte == 1)
             .toList();
@@ -98,9 +95,7 @@ class _FirmarReportesGeneradosViewState
     }
   }
 
-
   Future<void> _verPdf(Reporte r) async {
-
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -108,12 +103,10 @@ class _FirmarReportesGeneradosViewState
     );
 
     try {
-
       final resData = await _service.obtenerDatosPdf(r.idReporte);
       Navigator.pop(context);
 
       if (resData.status == 'success') {
-
         final bytes = await _pdfService.generarPdf(resData.data!);
 
         if (mounted) {
@@ -177,9 +170,26 @@ class _FirmarReportesGeneradosViewState
     }
   }
 
-
   Future<void> _confirmarFirma(Reporte r) async {
-    bool ok =
+    final usuario = Provider.of<AuthProvider>(
+      context,
+      listen: false,
+    ).usuarioActual;
+    if (usuario == null) return;
+
+    if (usuario.tienePinConfigurado == false) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "Acción denegada: Debe configurar su PIN de firma en el panel lateral primero.",
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    bool confirmarAccion =
         await showDialog<bool>(
           context: context,
           builder: (c) => AlertDialog(
@@ -203,7 +213,7 @@ class _FirmarReportesGeneradosViewState
               ),
               ElevatedButton.icon(
                 icon: const Icon(Icons.edit_document, size: 16),
-                label: const Text("Firmar Documento"),
+                label: const Text("Proceder a Validar"),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue[700],
                   foregroundColor: Colors.white,
@@ -215,13 +225,17 @@ class _FirmarReportesGeneradosViewState
         ) ??
         false;
 
-    if (ok) {
+    if (confirmarAccion) {
+      bool pinValido =
+          await showDialog<bool>(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => const ValidarPinDialog(),
+          ) ??
+          false;
 
-      final usuario = Provider.of<AuthProvider>(
-        context,
-        listen: false,
-      ).usuarioActual;
-      if (usuario == null) return;
+      if (pinValido) {
+        setState(() => _isLoading = true);
 
       setState(() => _isLoading = true);
 
@@ -240,19 +254,44 @@ class _FirmarReportesGeneradosViewState
           "Firmado",
           "Su firma digital ha sido registrada correctamente.",
         );
-      } else {
-        setState(() => _isLoading = false);
-        _mostrarError("Error al firmar", detalle: res.message);
+
+        if (res.status == 'success') {
+          _cargarReportes();
+          _mostrarExito(
+            "Firmado",
+            "Su firma digital ha sido registrada correctamente.",
+          );
+        } else {
+          setState(() => _isLoading = false);
+          _mostrarError("Error al firmar", detalle: res.message);
+        }
       }
     }
   }
 
   Future<void> _confirmarFirmaLote(String key, List<Reporte> lista) async {
+    final usuario = Provider.of<AuthProvider>(
+      context,
+      listen: false,
+    ).usuarioActual;
+    if (usuario == null) return;
+
+    if (usuario.tienePinConfigurado == false) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "Acción denegada: Debe configurar su PIN de firma en el panel lateral primero.",
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
     List<String> p = key.split('|');
     String salon = p.length > 3 ? "${p[2]} - ${p[3]}" : "este salón";
 
-    bool ok =
+    bool confirmarAccion =
         await showDialog<bool>(
           context: context,
           builder: (c) => AlertDialog(
@@ -280,45 +319,45 @@ class _FirmarReportesGeneradosViewState
                   foregroundColor: Colors.white,
                 ),
                 onPressed: () => Navigator.pop(c, true),
-                child: const Text("Firmar Todo"),
+                child: const Text("Proceder a Validar"),
               ),
             ],
           ),
         ) ??
         false;
 
-    if (ok) {
-      final usuario = Provider.of<AuthProvider>(
-        context,
-        listen: false,
-      ).usuarioActual;
-      if (usuario == null) return;
+    if (confirmarAccion) {
+      bool pinValido =
+          await showDialog<bool>(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => const ValidarPinDialog(),
+          ) ??
+          false;
 
-      setState(() => _isLoading = true);
-      final ids = lista.map((e) => e.idReporte).toList();
+      if (pinValido) {
+        setState(() => _isLoading = true);
+        final ids = lista.map((e) => e.idReporte).toList();
 
-
-      final res = await _service.firmarLote(
-        ids,
-        usuario.idUsuario,
-        usuario.idRol,
-      );
-
-      if (res.status == 'success') {
-        await _cargarReportes();
-        await widget.onAvisosActualizados?.call();
-
-        _mostrarExito(
-          "Lote Firmado",
-          "Se han procesado y firmado ${lista.length} documentos.",
+        final res = await _service.firmarLote(
+          ids,
+          usuario.idUsuario,
+          usuario.idRol,
         );
-      } else {
-        setState(() => _isLoading = false);
-      _mostrarError("Error", detalle: res.message);
+
+        if (res.status == 'success') {
+          _cargarReportes();
+          _mostrarExito(
+            "Lote Firmado",
+            "Se han procesado y firmado ${lista.length} documentos.",
+          );
+        } else {
+          setState(() => _isLoading = false);
+          _mostrarError("Error", detalle: res.message);
+        }
       }
     }
   }
-
 
   String _obtenerDescripcionReporte(Reporte r) {
     final params = r.parametros ?? "";
@@ -333,7 +372,6 @@ class _FirmarReportesGeneradosViewState
     return params.split('|')[0];
   }
 
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -342,7 +380,6 @@ class _FirmarReportesGeneradosViewState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-
           Row(
             children: [
               Text(
@@ -363,7 +400,6 @@ class _FirmarReportesGeneradosViewState
             ),
           ),
           const SizedBox(height: 25),
-
 
           Container(
             decoration: BoxDecoration(
@@ -398,7 +434,6 @@ class _FirmarReportesGeneradosViewState
             ),
           ),
           const SizedBox(height: 20),
-
 
           Expanded(
             child: _isLoading
@@ -455,7 +490,6 @@ class _FirmarReportesGeneradosViewState
     ),
   );
 
-
   Widget _buildBoletasView() {
     if (_boletasAgrupadas.isEmpty) return _empty("No hay boletas pendientes.");
     return ListView.builder(
@@ -486,22 +520,18 @@ class _FirmarReportesGeneradosViewState
     ),
   );
 
-
   Widget _cardItem(Reporte r, IconData icon, Color color) {
-
     bool esRendimiento = r.tipoReporte == 'Reporte de Rendimiento';
     String titulo = r.tipoReporte;
     String subtitulo = "";
 
     if (esRendimiento) {
-
       String fecha = DateFormat(
         'dd/MM/yyyy',
       ).format(DateTime.parse(r.fechaGeneracion));
       subtitulo =
           "ID: #${r.idReporte.toString().padLeft(4, '0')}  |  Fecha: $fecha";
     } else {
-
       subtitulo = _obtenerDescripcionReporte(r);
     }
 
@@ -575,7 +605,6 @@ class _FirmarReportesGeneradosViewState
       ),
     );
   }
-
 
   Widget _actionBtn(
     IconData icon,
@@ -698,9 +727,7 @@ class _FirmarReportesGeneradosViewState
     child: Icon(i, size: 20, color: c),
   );
 
-
   void _verInfo(Reporte r) {
-
     String contenido = r.parametros?.replaceAll('|', '\n\n') ?? "Sin datos";
 
     showDialog(
@@ -713,7 +740,6 @@ class _FirmarReportesGeneradosViewState
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(

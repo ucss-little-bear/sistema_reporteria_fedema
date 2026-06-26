@@ -70,4 +70,11 @@ class AuthProvider extends ChangeNotifier {
     _isLoading = valor;
     notifyListeners();
   }
+
+  void actualizarEstadoPin(bool estado) {
+    if (_usuarioActual != null) {
+      _usuarioActual = _usuarioActual!.copyWith(tienePinConfigurado: estado);
+      notifyListeners();
+    }
+  }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend/Controller/auth_provider_controller.dart';
 import 'package:frontend/Controller/usuario_provider_controller.dart';
 import 'package:frontend/Model/Entities/usuario_entity.dart';
+import 'package:frontend/Model/Services/usuario_service.dart';
 
 import 'package:provider/provider.dart';
 
@@ -31,14 +32,12 @@ class _GestionarUsuariosViewState extends State<GestionarUsuariosView> {
     super.dispose();
   }
 
-
   void _abrirDialogoUsuario({Usuario? usuarioEditar}) {
     showDialog(
       context: context,
       builder: (context) => DialogUsuario(usuario: usuarioEditar),
     );
   }
-
 
   void _abrirDialogoPassword(Usuario usuario) {
     showDialog(
@@ -47,14 +46,11 @@ class _GestionarUsuariosViewState extends State<GestionarUsuariosView> {
     );
   }
 
-
   void _confirmarCambioEstado(Usuario user) {
-
     final currentUser = Provider.of<AuthProvider>(
       context,
       listen: false,
     ).usuarioActual;
-
 
     if (currentUser != null && currentUser.idUsuario == user.idUsuario) {
       showDialog(
@@ -83,7 +79,6 @@ class _GestionarUsuariosViewState extends State<GestionarUsuariosView> {
       );
       return;
     }
-
 
     bool esActivo = (user.estado == 1);
     showDialog(
@@ -134,7 +129,6 @@ class _GestionarUsuariosViewState extends State<GestionarUsuariosView> {
     final theme = Theme.of(context);
     final usuarioProvider = context.watch<UsuarioProvider>();
 
-
     List<Usuario> usuariosFiltrados = usuarioProvider.usuarios.where((user) {
       final query = _searchController.text.toLowerCase();
       final nombreCompleto = "${user.nombres} ${user.apellidos}".toLowerCase();
@@ -168,7 +162,6 @@ class _GestionarUsuariosViewState extends State<GestionarUsuariosView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -199,7 +192,6 @@ class _GestionarUsuariosViewState extends State<GestionarUsuariosView> {
           ],
         ),
         const SizedBox(height: 32),
-
 
         Card(
           child: Padding(
@@ -289,7 +281,6 @@ class _GestionarUsuariosViewState extends State<GestionarUsuariosView> {
           ),
         ),
         const SizedBox(height: 24),
-
 
         Expanded(
           child: Card(
@@ -413,6 +404,91 @@ class _GestionarUsuariosViewState extends State<GestionarUsuariosView> {
                                       ),
                                     ),
                                     IconButton(
+                                      icon: const Icon(
+                                        Icons.lock_reset,
+                                        color: Colors.orange,
+                                      ),
+                                      tooltip: "Resetear PIN",
+                                      onPressed: () async {
+                                        bool confirmacion =
+                                            await showDialog(
+                                              context: context,
+                                              builder: (context) => AlertDialog(
+                                                title: const Text(
+                                                  "Resetear PIN",
+                                                ),
+                                                content: Text(
+                                                  "¿Desea borrar el PIN de ${user.nombres}? Tendrá que crear uno nuevo.",
+                                                ),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () =>
+                                                        Navigator.pop(
+                                                          context,
+                                                          false,
+                                                        ),
+                                                    child: const Text(
+                                                      "Cancelar",
+                                                    ),
+                                                  ),
+                                                  ElevatedButton(
+                                                    onPressed: () =>
+                                                        Navigator.pop(
+                                                          context,
+                                                          true,
+                                                        ),
+                                                    style:
+                                                        ElevatedButton.styleFrom(
+                                                          backgroundColor:
+                                                              Colors.red,
+                                                          foregroundColor:
+                                                              Colors.white,
+                                                        ),
+                                                    child: const Text(
+                                                      "Resetear",
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ) ??
+                                            false;
+
+                                        if (confirmacion) {
+                                          bool exito = await UsuarioService()
+                                              .resetearPinFirma(user.idUsuario);
+                                          if (!context.mounted) return;
+                                          if (exito) {
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              const SnackBar(
+                                                content: Text(
+                                                  "PIN reseteado correctamente",
+                                                ),
+                                                backgroundColor: Colors.green,
+                                              ),
+                                            );
+                                            // Recargar la lista de usuarios tras el éxito
+                                            Provider.of<UsuarioProvider>(
+                                              context,
+                                              listen: false,
+                                            ).cargarUsuarios();
+                                          } else {
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              const SnackBar(
+                                                content: Text(
+                                                  "Error al resetear PIN",
+                                                ),
+                                                backgroundColor: Colors.red,
+                                              ),
+                                            );
+                                          }
+                                        }
+                                      },
+                                    ),
+                                    IconButton(
                                       tooltip: "Cambiar contraseña",
                                       icon: const Icon(
                                         Icons.key,
@@ -451,10 +527,6 @@ class _GestionarUsuariosViewState extends State<GestionarUsuariosView> {
     );
   }
 }
-
-
-
-
 
 class DialogUsuario extends StatefulWidget {
   final Usuario? usuario;
@@ -774,7 +846,6 @@ class _DialogUsuarioState extends State<DialogUsuario> {
     );
   }
 }
-
 
 class DialogCambiarPassword extends StatefulWidget {
   final Usuario usuario;

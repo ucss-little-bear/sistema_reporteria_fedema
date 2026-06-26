@@ -5,18 +5,15 @@ import '../Entities/api_response_entity.dart';
 import 'api_config.dart';
 
 class UsuarioService {
-
   Future<ApiResponse<List<Usuario>>> listarUsuarios() async {
     try {
       final response = await http.post(
         Uri.parse(ApiConfig.baseUrl),
-        headers: ApiConfig
-            .headers,
+        headers: ApiConfig.headers,
         body: jsonEncode({"accion": "listar_usuarios"}),
       );
 
       if (response.statusCode == 200) {
-
         if (response.body.isEmpty) {
           return ApiResponse(
             status: "error",
@@ -67,7 +64,6 @@ class UsuarioService {
     }
   }
 
-
   Future<ApiResponse<bool>> crearUsuario(Map<String, dynamic> datos) async {
     try {
       datos['accion'] = 'crear_usuario';
@@ -114,7 +110,6 @@ class UsuarioService {
     }
   }
 
-
   Future<ApiResponse<bool>> cambiarEstado(
     int idUsuario,
     int nuevoEstado,
@@ -137,6 +132,53 @@ class UsuarioService {
       );
     } catch (e) {
       return ApiResponse(status: "error", message: "$e");
+    }
+  }
+
+  Future<bool> crearPinFirma(int idUsuario, String pin) async {
+    try {
+      final response = await http.post(
+        Uri.parse(ApiConfig.baseUrl), // URL limpia
+        headers: ApiConfig.headers, // Usa tus headers configurados
+        body: jsonEncode({
+          "accion": "crear_pin",
+          "id_usuario": idUsuario,
+          "pin": pin,
+        }),
+      );
+      return jsonDecode(response.body)['status'] == 'success';
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> verificarPinFirma(int idUsuario, String pin) async {
+    try {
+      final response = await http.post(
+        Uri.parse(ApiConfig.baseUrl),
+        headers: ApiConfig.headers,
+        body: jsonEncode({
+          "accion": "verificar_pin",
+          "id_usuario": idUsuario,
+          "pin": pin,
+        }),
+      );
+      return jsonDecode(response.body)['status'] == 'success';
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> resetearPinFirma(int idUsuario) async {
+    try {
+      final response = await http.post(
+        Uri.parse(ApiConfig.baseUrl),
+        headers: ApiConfig.headers,
+        body: jsonEncode({"accion": "resetear_pin", "id_usuario": idUsuario}),
+      );
+      return jsonDecode(response.body)['status'] == 'success';
+    } catch (e) {
+      return false;
     }
   }
 }
