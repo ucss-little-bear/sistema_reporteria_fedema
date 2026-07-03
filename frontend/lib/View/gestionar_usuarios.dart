@@ -457,6 +457,7 @@ class _GestionarUsuariosViewState extends State<GestionarUsuariosView> {
                                           bool exito = await UsuarioService()
                                               .resetearPinFirma(user.idUsuario);
                                           if (!context.mounted) return;
+
                                           if (exito) {
                                             ScaffoldMessenger.of(
                                               context,
@@ -468,11 +469,27 @@ class _GestionarUsuariosViewState extends State<GestionarUsuariosView> {
                                                 backgroundColor: Colors.green,
                                               ),
                                             );
-                                            // Recargar la lista de usuarios tras el éxito
+
+                                            // 1. Recargar la lista de la tabla
                                             Provider.of<UsuarioProvider>(
                                               context,
                                               listen: false,
                                             ).cargarUsuarios();
+
+                                            // 2. LA SOLUCIÓN: Si la secretaria borra SU PROPIO PIN, actualizamos la alerta lateral al instante
+                                            final authProvider =
+                                                Provider.of<AuthProvider>(
+                                                  context,
+                                                  listen: false,
+                                                );
+                                            if (authProvider
+                                                    .usuarioActual
+                                                    ?.idUsuario ==
+                                                user.idUsuario) {
+                                              authProvider.actualizarEstadoPin(
+                                                false,
+                                              );
+                                            }
                                           } else {
                                             ScaffoldMessenger.of(
                                               context,
