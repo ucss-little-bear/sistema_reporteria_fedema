@@ -234,8 +234,6 @@ class _FirmarReportesGeneradosViewState
       if (pinValido) {
         setState(() => _isLoading = true);
 
-        setState(() => _isLoading = true);
-
         final res = await _service.firmarReporte(
           r.idReporte,
           usuario.idUsuario,
@@ -250,17 +248,9 @@ class _FirmarReportesGeneradosViewState
             "Firmado",
             "Su firma digital ha sido registrada correctamente.",
           );
-
-          if (res.status == 'success') {
-            _cargarReportes();
-            _mostrarExito(
-              "Firmado",
-              "Su firma digital ha sido registrada correctamente.",
-            );
-          } else {
-            setState(() => _isLoading = false);
-            _mostrarError("Error al firmar", detalle: res.message);
-          }
+        } else {
+          setState(() => _isLoading = false);
+          _mostrarError("Error al firmar", detalle: res.message);
         }
       }
     }
@@ -343,7 +333,9 @@ class _FirmarReportesGeneradosViewState
         );
 
         if (res.status == 'success') {
-          _cargarReportes();
+          await _cargarReportes();
+          await widget.onAvisosActualizados?.call();
+
           _mostrarExito(
             "Lote Firmado",
             "Se han procesado y firmado ${lista.length} documentos.",

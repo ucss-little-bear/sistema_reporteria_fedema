@@ -242,7 +242,9 @@ class _FirmarReportesRevisadosViewState
         );
 
         if (res.status == 'success') {
-          _cargarReportes();
+          await _cargarReportes();
+          await widget.onAvisosActualizados?.call();
+
           _mostrarExito(
             "Firmado",
             "Su firma digital ha sido registrada correctamente.",
@@ -335,7 +337,9 @@ class _FirmarReportesRevisadosViewState
         );
 
         if (res.status == 'success') {
-          _cargarReportes();
+          await _cargarReportes();
+          await widget.onAvisosActualizados?.call();
+
           _mostrarExito(
             "Lote Firmado",
             "Se han procesado y firmado ${lista.length} documentos revisados.",
