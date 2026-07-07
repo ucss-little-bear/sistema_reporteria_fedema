@@ -1375,5 +1375,43 @@ class Negocio {
         $fecha = date("d/m/Y H:i:s");
         return "Firmado digitalmente por: {$u['nombres']} {$u['apellidos']}\nDNI: {$u['dni']}\nCorreo: {$u['correo']}\nFecha: $fecha";
     }
-}
+     public function obtenerEstadisticasDashboard($idUsuario, $idRol) {
+        try {
+            $stats = [
+                'pendientes_firma' => 0,
+                'total_generados' => 0
+            ];
+
+            // 1 = Secretaría Académica, 2 = Directora, 3 = Docente
+            if ($idRol == 1) {
+                // Secretaría firma los que ya revisó la Directora (Estado 2 -> Pasan a 5 o 3)
+                $stmt = $this->conn->prepare("SELECT COUNT(*) FROM Historial_Reporte WHERE id_estado_reporte = 2");
+                $stmt->execute();
+                $stats['pendientes_firma'] = $stmt->fetchColumn();
+
+            } else if ($idRol == 2) {
+                // Directora firma los reportes recién generados (Estado 1 -> Pasan a 2)
+                $stmt = $this->conn->prepare("SELECT COUNT(*) FROM Historial_Reporte WHERE id_estado_reporte = 1");
+                $stmt->execute();
+                $stats['pendientes_firma'] = $stmt->fetchColumn();
+
+            } else if ($idRol == 3) {
+                // Docentes firman boletas que ya pasaron por secretaría (Estado 5)
+                // Y debemos filtrar para que solo cuente las de su salón (buscando su nombre en informacion_adicional)
+                $stmtU = $this->conn->prepare("SELECT CONCAT(apellidos, ', ', nombres) FROM Usuario_Sistema WHERE id_usuario = ?");
+                $stmtU->execute([$idUsuario]);
+                $nombreDocente = $stmtU->fetchColumn();
+
+                $stmt = $this->conn->prepare("SELECT COUNT(*) FROM Historial_Reporte WHERE id_estado_reporte = 5 AND informacion_adicional LIKE ?");
+                $stmt->execute(["%$nombreDocente%"]);
+                $stats['pendientes_firma'] = $stmt->fetchColumn();
+            }
+
+            return ["status" => "success", "data" => $stats];
+        } catch (Exception $e) {
+            return ["status" => "error", "message" => "Error BD: " . $e->getMessage()];
+        }
+    }
+    }
+
 ?>
