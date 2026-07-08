@@ -1712,7 +1712,7 @@ class Negocio {
             return ["status" => "error", "message" => "Error BD: " . $e->getMessage()];
         }
     }
-}
+
      public function obtenerEstadisticasDashboard($idUsuario, $idRol) {
         try {
             $stats = [

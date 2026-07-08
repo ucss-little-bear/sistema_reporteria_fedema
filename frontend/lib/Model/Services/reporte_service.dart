@@ -572,4 +572,26 @@ class ReporteService {
       return ApiResponse(status: "error", message: "Error: $e");
     }
   }
+
+  Future<ApiResponse<Map<String, dynamic>>> obtenerEstadisticasDashboard(int idUsuario, int idRol) async {
+    try {
+      final body = {
+        "accion": "dashboard_stats",
+        "id_usuario": idUsuario,
+        "id_rol": idRol,
+      };
+      final res = await _enviarRequest(body);
+      
+      if (res.status == 'success' && res.data != null) {
+        return ApiResponse(
+          status: res.status, 
+          message: res.message, 
+          data: Map<String, dynamic>.from(res.data)
+        );
+      }
+      return ApiResponse(status: res.status, message: res.message);
+    } catch (e) {
+      return ApiResponse(status: "error", message: "Error al cargar stats: $e");
+    }
+  }
 }

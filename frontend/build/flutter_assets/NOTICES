@@ -2736,7 +2736,6 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
   defined by the Mozilla Public License, v. 2.0.
 
 --------------------------------------------------------------------------------
-<<<<<<< HEAD
 desktop_drop
 
                                  Apache License
@@ -2942,8 +2941,6 @@ desktop_drop
    limitations under the License.
 
 --------------------------------------------------------------------------------
-=======
->>>>>>> Mejora/SDRF-5-dashboard-vivo-rojas
 devtools
 
 Copyright 2019 The Flutter Authors
@@ -3010,7 +3007,6 @@ Copyright 2024 The Flutter Authors
 Use of this source code is governed by a BSD-style license that can be
 found in the LICENSE file 
 --------------------------------------------------------------------------------
-<<<<<<< HEAD
 dotted_border
 
 MIT License
@@ -3035,8 +3031,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 --------------------------------------------------------------------------------
-=======
->>>>>>> Mejora/SDRF-5-dashboard-vivo-rojas
 double-conversion
 
 Copyright 2006-2011, the V8 project authors. All rights reserved.
@@ -25263,10 +25257,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --------------------------------------------------------------------------------
-<<<<<<< HEAD
 path_drawing
-=======
->>>>>>> Mejora/SDRF-5-dashboard-vivo-rojas
 path_parsing
 
 Copyright (c) 2018 Dan Field
