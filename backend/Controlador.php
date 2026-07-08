@@ -351,6 +351,15 @@ try {
         default:
             $response = ["status" => "error", "message" => "Acción no reconocida: " . $accion];
             break;
+            case 'dashboard_stats':
+            if (isset($data->id_usuario) && isset($data->id_rol)) {
+                $response = $negocio->obtenerEstadisticasDashboard($data->id_usuario, $data->id_rol);
+            } else {
+                $response = ["status" => "error", "message" => "Datos incompletos para estadísticas"];
+            }
+            break;
+        
+        
     }
 } catch (Throwable $e) {
 
