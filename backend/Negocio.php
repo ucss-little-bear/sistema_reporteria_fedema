@@ -1663,7 +1663,7 @@ class Negocio {
             // Reutilizamos el hasheo nativo de PHP
             $hash = password_hash($pin, PASSWORD_DEFAULT);
             
-            $query = "UPDATE usuario_sistema SET pin_firma = :pin WHERE id_usuario = :id";
+            $query = "UPDATE Usuario_Sistema SET pin_firma = :pin WHERE id_usuario = :id";
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(":pin", $hash);
             $stmt->bindParam(":id", $idUsuario);
