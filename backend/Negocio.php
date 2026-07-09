@@ -19,15 +19,11 @@ class Negocio {
         }
     }
 
-
-
-
-
     public function loginUsuario($usuario, $password) {
         try {
 
 
-            $query = "SELECT u.id_usuario, u.nombres, u.apellidos, u.id_rol, r.descripcion as rol, u.contrasena_hash, u.estado 
+            $query = "SELECT u.id_usuario, u.nombres, u.apellidos, u.id_rol, r.descripcion as rol, u.contrasena_hash, u.estado, u.pin_firma, u.primer_login 
                       FROM Usuario_Sistema u 
                       JOIN Rol r ON u.id_rol = r.id_rol 
                       WHERE u.nombre_usuario = :usuario LIMIT 1";
@@ -54,7 +50,12 @@ class Negocio {
 
                 if (password_verify($password, $row['contrasena_hash'])) {
 
+                    $row['tienePinConfigurado'] = ($row['pin_firma'] !== null && trim($row['pin_firma']) !== '');
+                    
+                    // Borramos los hashes antes de enviarlo al frontend por seguridad
                     unset($row['contrasena_hash']);
+                    unset($row['pin_firma']); 
+                    
                     return ["status" => "success", "data" => $row];
                 } else {
                     return ["status" => "error", "message" => "Contraseña incorrecta."];
@@ -73,7 +74,7 @@ class Negocio {
         try {
             $hash = password_hash($newPassword, PASSWORD_DEFAULT);
             
-            $query = "UPDATE Usuario_Sistema SET contrasena_hash = :pass WHERE id_usuario = :id";
+            $query = "UPDATE Usuario_Sistema SET contrasena_hash = :pass, primer_login = 0 WHERE id_usuario = :id";
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(":pass", $hash);
             $stmt->bindParam(":id", $idUsuario);
@@ -367,6 +368,287 @@ class Negocio {
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    public function obtenerAvisosPendientes($idUsuario, $idRol) {
+        try {
+            $idUsuario = (int)$idUsuario;
+            $idRol = (int)$idRol;
+
+            $avisos = [];
+            $totalDocumentos = 0;
+
+            if ($idRol === 2) {
+                // Directora: reportes generados pendientes de revisión/firma
+                $stmt = $this->conn->prepare("
+                    SELECT COUNT(*) 
+                    FROM Historial_Reporte 
+                    WHERE id_estado_reporte = 1
+                ");
+                $stmt->execute();
+                $cantidad = (int)$stmt->fetchColumn();
+
+                if ($cantidad > 0) {
+                    $totalDocumentos += $cantidad;
+                    $avisos[] = [
+                        "id" => "firmar_generados",
+                        "titulo" => "Reportes generados pendientes",
+                        "descripcion" => "Existen reportes generados pendientes de revisión por Dirección.",
+                        "cantidad" => $cantidad,
+                        "estado_id" => 1,
+                        "modulo_titulo" => "Firmar Generados"
+                    ];
+                }
+            }
+
+            if ($idRol === 1) {
+                // Secretaría Académica: reportes revisados pendientes de validación/firma
+                $stmt = $this->conn->prepare("
+                    SELECT COUNT(*) 
+                    FROM Historial_Reporte 
+                    WHERE id_estado_reporte = 2
+                ");
+                $stmt->execute();
+                $cantidad = (int)$stmt->fetchColumn();
+
+                if ($cantidad > 0) {
+                    $totalDocumentos += $cantidad;
+                    $avisos[] = [
+                        "id" => "firmar_revisados",
+                        "titulo" => "Reportes revisados pendientes",
+                        "descripcion" => "Existen reportes revisados listos para validación de Secretaría Académica.",
+                        "cantidad" => $cantidad,
+                        "estado_id" => 2,
+                        "modulo_titulo" => "Firmar Revisados"
+                    ];
+                }
+
+                // Secretaría Académica: documentos finales disponibles
+                $stmt = $this->conn->prepare("
+                    SELECT COUNT(*)
+                    FROM Historial_Reporte hr
+                    LEFT JOIN Aviso_Reporte_Visto arv
+                        ON arv.id_reporte = hr.id_reporte
+                        AND arv.id_usuario = ?
+                        AND arv.id_rol = ?
+                        AND arv.tipo_aviso = 'reportes_finales'
+                    WHERE hr.id_estado_reporte = 3
+                    AND arv.id_aviso_visto IS NULL
+                ");
+                $stmt->execute([$idUsuario, $idRol]);
+                $cantidad = (int)$stmt->fetchColumn();
+
+                if ($cantidad > 0) {
+                    $totalDocumentos += $cantidad;
+                    $avisos[] = [
+                        "id" => "reportes_finales",
+                        "titulo" => "Reportes finales disponibles",
+                        "descripcion" => "Existen documentos finales disponibles para consulta o exportación.",
+                        "cantidad" => $cantidad,
+                        "estado_id" => 3,
+                        "modulo_titulo" => "Reportes Finales"
+                    ];
+                }
+            }
+
+            if ($idRol === 3) {
+                // Docente: obtener su nombre tal como se usa en informacion_adicional
+                $stmtU = $this->conn->prepare("
+                    SELECT CONCAT(apellidos, ', ', nombres) AS nombre_completo 
+                    FROM Usuario_Sistema 
+                    WHERE id_usuario = ?
+                ");
+                $stmtU->execute([$idUsuario]);
+                $nombreDocente = $stmtU->fetchColumn();
+
+                if ($nombreDocente) {
+                    // Docente: boletas pendientes de firma final
+                    $stmt = $this->conn->prepare("
+                        SELECT COUNT(*) 
+                        FROM Historial_Reporte 
+                        WHERE id_estado_reporte = 5
+                        AND id_tipo_reporte = 1
+                        AND informacion_adicional LIKE ?
+                    ");
+                    $stmt->execute(["%$nombreDocente%"]);
+                    $cantidad = (int)$stmt->fetchColumn();
+
+                    if ($cantidad > 0) {
+                        $totalDocumentos += $cantidad;
+                        $avisos[] = [
+                            "id" => "firmar_boletas",
+                            "titulo" => "Boletas pendientes de firma",
+                            "descripcion" => "Existen boletas de notas listas para firma final del docente.",
+                            "cantidad" => $cantidad,
+                            "estado_id" => 5,
+                            "modulo_titulo" => "Firmar Boletas"
+                        ];
+                    }
+
+                    // Docente: boletas finales disponibles
+                    $stmt = $this->conn->prepare("
+                        SELECT COUNT(*)
+                        FROM Historial_Reporte hr
+                        LEFT JOIN Aviso_Reporte_Visto arv
+                            ON arv.id_reporte = hr.id_reporte
+                            AND arv.id_usuario = ?
+                            AND arv.id_rol = ?
+                            AND arv.tipo_aviso = 'boletas_finales'
+                        WHERE hr.id_estado_reporte = 3
+                        AND hr.id_tipo_reporte = 1
+                        AND hr.informacion_adicional LIKE ?
+                        AND arv.id_aviso_visto IS NULL
+                    ");
+                    $stmt->execute([$idUsuario, $idRol, "%$nombreDocente%"]);
+                    $cantidad = (int)$stmt->fetchColumn();
+
+                    if ($cantidad > 0) {
+                        $totalDocumentos += $cantidad;
+                        $avisos[] = [
+                            "id" => "boletas_finales",
+                            "titulo" => "Boletas finales disponibles",
+                            "descripcion" => "Existen boletas finales disponibles para consulta o descarga.",
+                            "cantidad" => $cantidad,
+                            "estado_id" => 3,
+                            "modulo_titulo" => "Boletas Finales"
+                        ];
+                    }
+                }
+            }
+
+            return [
+                "status" => "success",
+                "message" => "Avisos consultados correctamente.",
+                "total" => $totalDocumentos,
+                "data" => $avisos
+            ];
+
+        } catch (Exception $e) {
+            return [
+                "status" => "error",
+                "message" => "Error al obtener avisos pendientes: " . $e->getMessage()
+            ];
+        }
+    }
+
+    public function marcarAvisoReporteVisto($idUsuario, $idRol, $tipoAviso) {
+        try {
+            $idUsuario = (int)$idUsuario;
+            $idRol = (int)$idRol;
+            $tipoAviso = trim((string)$tipoAviso);
+
+            if ($tipoAviso === "boletas_finales") {
+                if ($idRol !== 3) {
+                    return [
+                        "status" => "error",
+                        "message" => "Solo el rol Docente puede marcar boletas finales como vistas."
+                    ];
+                }
+
+                $stmtU = $this->conn->prepare("
+                    SELECT CONCAT(apellidos, ', ', nombres) AS nombre_completo
+                    FROM Usuario_Sistema
+                    WHERE id_usuario = ?
+                ");
+                $stmtU->execute([$idUsuario]);
+                $nombreDocente = $stmtU->fetchColumn();
+
+                if (!$nombreDocente) {
+                    return [
+                        "status" => "error",
+                        "message" => "No se encontró el docente asociado al usuario."
+                    ];
+                }
+
+                $stmt = $this->conn->prepare("
+                    INSERT IGNORE INTO Aviso_Reporte_Visto (
+                        id_reporte,
+                        id_usuario,
+                        id_rol,
+                        tipo_aviso,
+                        fecha_visto
+                    )
+                    SELECT
+                        hr.id_reporte,
+                        ?,
+                        ?,
+                        ?,
+                        NOW()
+                    FROM Historial_Reporte hr
+                    WHERE hr.id_estado_reporte = 3
+                    AND hr.id_tipo_reporte = 1
+                    AND hr.informacion_adicional LIKE ?
+                ");
+
+                $stmt->execute([
+                    $idUsuario,
+                    $idRol,
+                    $tipoAviso,
+                    "%$nombreDocente%"
+                ]);
+
+                return [
+                    "status" => "success",
+                    "message" => "Boletas finales marcadas como vistas correctamente.",
+                    "data" => [
+                        "actualizados" => $stmt->rowCount()
+                    ]
+                ];
+            }
+
+            if ($tipoAviso === "reportes_finales") {
+                if ($idRol !== 1) {
+                    return [
+                        "status" => "error",
+                        "message" => "Solo el rol Secretaría puede marcar reportes finales como vistos."
+                    ];
+                }
+
+                $stmt = $this->conn->prepare("
+                    INSERT IGNORE INTO Aviso_Reporte_Visto (
+                        id_reporte,
+                        id_usuario,
+                        id_rol,
+                        tipo_aviso,
+                        fecha_visto
+                    )
+                    SELECT
+                        hr.id_reporte,
+                        ?,
+                        ?,
+                        ?,
+                        NOW()
+                    FROM Historial_Reporte hr
+                    WHERE hr.id_estado_reporte = 3
+                ");
+
+                $stmt->execute([
+                    $idUsuario,
+                    $idRol,
+                    $tipoAviso
+                ]);
+
+                return [
+                    "status" => "success",
+                    "message" => "Reportes finales marcados como vistos correctamente.",
+                    "data" => [
+                        "actualizados" => $stmt->rowCount()
+                    ]
+                ];
+            }
+
+            return [
+                "status" => "error",
+                "message" => "Tipo de aviso no soportado."
+            ];
+
+        } catch (Exception $e) {
+            return [
+                "status" => "error",
+                "message" => "Error al marcar aviso como visto: " . $e->getMessage()
+            ];
+        }
+    }
+
     public function cambiarEstadoReporte($idReporte, $nuevoEstado) {
         try {
             $sql = "UPDATE Historial_Reporte SET id_estado_reporte = ? WHERE id_reporte = ?";
@@ -1375,5 +1657,99 @@ class Negocio {
         $fecha = date("d/m/Y H:i:s");
         return "Firmado digitalmente por: {$u['nombres']} {$u['apellidos']}\nDNI: {$u['dni']}\nCorreo: {$u['correo']}\nFecha: $fecha";
     }
-}
+
+    public function crearPinFirma($idUsuario, $pin) {
+        try {
+            // Reutilizamos el hasheo nativo de PHP
+            $hash = password_hash($pin, PASSWORD_DEFAULT);
+            
+            $query = "UPDATE Usuario_Sistema SET pin_firma = :pin WHERE id_usuario = :id";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(":pin", $hash);
+            $stmt->bindParam(":id", $idUsuario);
+
+            if ($stmt->execute()) {
+                return ["status" => "success", "message" => "PIN creado correctamente."];
+            }
+            return ["status" => "error", "message" => "No se pudo guardar el PIN."];
+        } catch (PDOException $e) {
+            return ["status" => "error", "message" => "Error BD: " . $e->getMessage()];
+        }
+    }
+
+    public function verificarPinFirma($idUsuario, $pin) {
+        try {
+            $query = "SELECT pin_firma FROM Usuario_Sistema WHERE id_usuario = :id";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(":id", $idUsuario);
+            $stmt->execute();
+            
+            $hashGuardado = $stmt->fetchColumn();
+            
+            // Reutilizamos la verificación de hash
+            if ($hashGuardado && password_verify($pin, $hashGuardado)) {
+                return ["status" => "success", "message" => "PIN válido. Autorizado para firmar."];
+            } else {
+                return ["status" => "error", "message" => "El PIN ingresado es incorrecto."];
+            }
+        } catch (PDOException $e) {
+            return ["status" => "error", "message" => "Error BD: " . $e->getMessage()];
+        }
+    }
+
+    public function resetearPinFirma($idUsuario) {
+        try {
+            // Lo devolvemos a NULL para que el sistema le vuelva a pedir crearlo
+            $query = "UPDATE Usuario_Sistema SET pin_firma = NULL WHERE id_usuario = :id";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(":id", $idUsuario);
+
+            if ($stmt->execute()) {
+                return ["status" => "success", "message" => "PIN reseteado correctamente."];
+            }
+            return ["status" => "error", "message" => "No se pudo resetear el PIN."];
+        } catch (PDOException $e) {
+            return ["status" => "error", "message" => "Error BD: " . $e->getMessage()];
+        }
+    }
+
+     public function obtenerEstadisticasDashboard($idUsuario, $idRol) {
+        try {
+            $stats = [
+                'pendientes_firma' => 0,
+                'total_generados' => 0
+            ];
+
+            // 1 = Secretaría Académica, 2 = Directora, 3 = Docente
+            if ($idRol == 1) {
+                // Secretaría firma los que ya revisó la Directora (Estado 2 -> Pasan a 5 o 3)
+                $stmt = $this->conn->prepare("SELECT COUNT(*) FROM Historial_Reporte WHERE id_estado_reporte = 2");
+                $stmt->execute();
+                $stats['pendientes_firma'] = $stmt->fetchColumn();
+
+            } else if ($idRol == 2) {
+                // Directora firma los reportes recién generados (Estado 1 -> Pasan a 2)
+                $stmt = $this->conn->prepare("SELECT COUNT(*) FROM Historial_Reporte WHERE id_estado_reporte = 1");
+                $stmt->execute();
+                $stats['pendientes_firma'] = $stmt->fetchColumn();
+
+            } else if ($idRol == 3) {
+                // Docentes firman boletas que ya pasaron por secretaría (Estado 5)
+                // Y debemos filtrar para que solo cuente las de su salón (buscando su nombre en informacion_adicional)
+                $stmtU = $this->conn->prepare("SELECT CONCAT(apellidos, ', ', nombres) FROM Usuario_Sistema WHERE id_usuario = ?");
+                $stmtU->execute([$idUsuario]);
+                $nombreDocente = $stmtU->fetchColumn();
+
+                $stmt = $this->conn->prepare("SELECT COUNT(*) FROM Historial_Reporte WHERE id_estado_reporte = 5 AND informacion_adicional LIKE ?");
+                $stmt->execute(["%$nombreDocente%"]);
+                $stats['pendientes_firma'] = $stmt->fetchColumn();
+            }
+
+            return ["status" => "success", "data" => $stats];
+        } catch (Exception $e) {
+            return ["status" => "error", "message" => "Error BD: " . $e->getMessage()];
+        }
+    }
+    }
+
 ?>

@@ -7,6 +7,8 @@ environment:
   sdk: ^3.12.0
 
 dependencies:
+  desktop_drop: ^0.4.4
+  dotted_border: ^2.1.0 # CR-SDRF-4: Dependencia UI para renderizado del patrón punteado del DropZone
   excel: ^4.0.6
   file_picker: ^11.0.2
   flutter:

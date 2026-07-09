@@ -1,0 +1,1 @@
+ALTER TABLE Usuario_Sistema ADD COLUMN pin_firma VARCHAR(255) DEFAULT NULL;

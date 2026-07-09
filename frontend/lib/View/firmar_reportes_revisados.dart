@@ -4,12 +4,15 @@ import 'package:frontend/Controller/auth_provider_controller.dart';
 import 'package:frontend/Model/Entities/reporte_entity.dart';
 import 'package:frontend/Model/Services/pdf_generator_service.dart';
 import 'package:frontend/Model/Services/reporte_service.dart';
+import 'package:frontend/View/validar_pin_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:printing/printing.dart';
 import 'package:intl/intl.dart';
 
 class FirmarReportesRevisadosView extends StatefulWidget {
-  const FirmarReportesRevisadosView({super.key});
+  final Future<void> Function()? onAvisosActualizados;
+
+  const FirmarReportesRevisadosView({super.key, this.onAvisosActualizados});
 
   @override
   State<FirmarReportesRevisadosView> createState() =>
@@ -23,7 +26,6 @@ class _FirmarReportesRevisadosViewState
   final PdfGeneratorService _pdfService = PdfGeneratorService();
 
   bool _isLoading = true;
-
 
   Map<String, List<Reporte>> _boletasAgrupadas = {};
   List<Reporte> _listaRendimiento = [];
@@ -44,7 +46,6 @@ class _FirmarReportesRevisadosViewState
     super.dispose();
   }
 
-
   Future<void> _cargarReportes() async {
     setState(() => _isLoading = true);
     final usuario = Provider.of<AuthProvider>(
@@ -59,7 +60,6 @@ class _FirmarReportesRevisadosViewState
         usuario.idRol,
       );
       if (res.status == 'success' && res.data != null) {
-
         final pendientes = res.data!
             .where((r) => r.idEstadoReporte == 2)
             .toList();
@@ -91,7 +91,6 @@ class _FirmarReportesRevisadosViewState
       }
     }
   }
-
 
   Future<void> _verPdf(Reporte r) async {
     showDialog(
@@ -166,9 +165,26 @@ class _FirmarReportesRevisadosViewState
     }
   }
 
-
   Future<void> _confirmarFirma(Reporte r) async {
-    bool ok =
+    final usuario = Provider.of<AuthProvider>(
+      context,
+      listen: false,
+    ).usuarioActual;
+    if (usuario == null) return;
+
+    if (usuario.tienePinConfigurado == false) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "Acción denegada: Debe configurar su PIN de firma en el panel lateral primero.",
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    bool confirmarAccion =
         await showDialog<bool>(
           context: context,
           builder: (c) => AlertDialog(
@@ -177,26 +193,27 @@ class _FirmarReportesRevisadosViewState
             ),
             title: Row(
               children: const [
-                Icon(Icons.verified_user, color: Colors.orange),
+                Icon(Icons.verified_user, color: Colors.blue),
                 SizedBox(width: 10),
-                Text("Firma de Secretaría"),
+                Text("Firma Digital Definitiva"),
               ],
             ),
             content: const Text(
-              "Al firmar, validará el documento revisado por Dirección.\n"
-              "• Boletas pasarán a 'Firmado' (para Docente).\n"
-              "• Otros reportes pasarán a 'Final'.",
+              "Al firmar este documento revisado, se aplicará su estampa digital oficial.\n¿Desea proceder a validar su identidad?",
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(c, false),
-                child: const Text("Cancelar"),
+                child: const Text(
+                  "Cancelar",
+                  style: TextStyle(color: Colors.grey),
+                ),
               ),
               ElevatedButton.icon(
                 icon: const Icon(Icons.edit_document, size: 16),
-                label: const Text("Firmar y Validar"),
+                label: const Text("Proceder a Validar"),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange[800],
+                  backgroundColor: Colors.blue[700],
                   foregroundColor: Colors.white,
                 ),
                 onPressed: () => Navigator.pop(c, true),
@@ -206,39 +223,63 @@ class _FirmarReportesRevisadosViewState
         ) ??
         false;
 
-    if (ok) {
-      final usuario = Provider.of<AuthProvider>(
-        context,
-        listen: false,
-      ).usuarioActual;
-      if (usuario == null) return;
+    if (confirmarAccion) {
+      bool pinValido =
+          await showDialog<bool>(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => const ValidarPinDialog(),
+          ) ??
+          false;
 
-      setState(() => _isLoading = true);
+      if (pinValido) {
+        setState(() => _isLoading = true);
 
-      final res = await _service.firmarReporte(
-        r.idReporte,
-        usuario.idUsuario,
-        usuario.idRol,
-      );
-
-      if (res.status == 'success') {
-        _cargarReportes();
-        _mostrarExito(
-          "Validado",
-          "Firma de Secretaría registrada correctamente.",
+        final res = await _service.firmarReporte(
+          r.idReporte,
+          usuario.idUsuario,
+          usuario.idRol,
         );
-      } else {
-        setState(() => _isLoading = false);
-        _mostrarError("Error al firmar", detalle: res.message);
+
+        if (res.status == 'success') {
+          await _cargarReportes();
+          await widget.onAvisosActualizados?.call();
+
+          _mostrarExito(
+            "Firmado",
+            "Su firma digital ha sido registrada correctamente.",
+          );
+        } else {
+          setState(() => _isLoading = false);
+          _mostrarError("Error al firmar", detalle: res.message);
+        }
       }
     }
   }
 
   Future<void> _confirmarFirmaLote(String key, List<Reporte> lista) async {
+    final usuario = Provider.of<AuthProvider>(
+      context,
+      listen: false,
+    ).usuarioActual;
+    if (usuario == null) return;
+
+    if (usuario.tienePinConfigurado == false) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "Acción denegada: Debe configurar su PIN de firma en el panel lateral primero.",
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     List<String> p = key.split('|');
     String salon = p.length > 3 ? "${p[2]} - ${p[3]}" : "este salón";
 
-    bool ok =
+    bool confirmarAccion =
         await showDialog<bool>(
           context: context,
           builder: (c) => AlertDialog(
@@ -247,58 +288,69 @@ class _FirmarReportesRevisadosViewState
             ),
             title: Row(
               children: const [
-                Icon(Icons.folder_special, color: Colors.deepOrange),
+                Icon(Icons.folder_special, color: Colors.purple),
                 SizedBox(width: 10),
-                Text("Firma Masiva Secretaría"),
+                Text("Firma Masiva de Revisados"),
               ],
             ),
             content: Text(
-              "¿Firmar las ${lista.length} boletas del salón $salon?\nPasarán al docente para firma final.",
+              "Está a punto de firmar digitalmente ${lista.length} documentos revisados del salón $salon.\n¿Desea proceder a validar su identidad?",
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(c, false),
-                child: const Text("Cancelar"),
+                child: const Text(
+                  "Cancelar",
+                  style: TextStyle(color: Colors.grey),
+                ),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepOrange,
+                  backgroundColor: Colors.purple,
                   foregroundColor: Colors.white,
                 ),
                 onPressed: () => Navigator.pop(c, true),
-                child: const Text("Validar Todo"),
+                child: const Text("Proceder a Validar"),
               ),
             ],
           ),
         ) ??
         false;
 
-    if (ok) {
-      final usuario = Provider.of<AuthProvider>(
-        context,
-        listen: false,
-      ).usuarioActual;
-      if (usuario == null) return;
+    if (confirmarAccion) {
+      bool pinValido =
+          await showDialog<bool>(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => const ValidarPinDialog(),
+          ) ??
+          false;
 
-      setState(() => _isLoading = true);
-      final ids = lista.map((e) => e.idReporte).toList();
+      if (pinValido) {
+        setState(() => _isLoading = true);
+        final ids = lista.map((e) => e.idReporte).toList();
 
-      final res = await _service.firmarLote(
-        ids,
-        usuario.idUsuario,
-        usuario.idRol,
-      );
+        final res = await _service.firmarLote(
+          ids,
+          usuario.idUsuario,
+          usuario.idRol,
+        );
 
-      if (res.status == 'success') {
-        _cargarReportes();
-        _mostrarExito("Lote Procesado", "Documentos firmados y derivados.");
-      } else {
-        setState(() => _isLoading = false);
-        _mostrarError("Error", detalle: res.message);
+        if (res.status == 'success') {
+          await _cargarReportes();
+          await widget.onAvisosActualizados?.call();
+
+          _mostrarExito(
+            "Lote Firmado",
+            "Se han procesado y firmado ${lista.length} documentos revisados.",
+          );
+        } else {
+          setState(() => _isLoading = false);
+          _mostrarError("Error", detalle: res.message);
+        }
       }
     }
   }
-
 
   String _obtenerDescripcionReporte(Reporte r) {
     final params = r.parametros ?? "";
@@ -312,7 +364,6 @@ class _FirmarReportesRevisadosViewState
     }
     return params.split('|')[0];
   }
-
 
   @override
   Widget build(BuildContext context) {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend/Controller/auth_provider_controller.dart';
 import 'package:frontend/View/main_layout.dart';
 import 'package:provider/provider.dart';
+import 'package:frontend/View/cambio_password_obligatorio.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -31,12 +32,24 @@ class _LoginScreenState extends State<LoginScreen> {
         _usuarioController.text.trim(),
         _passwordController.text.trim(),
       );
-
-      if (exito && mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const MainLayout()),
-        );
+      
+        if (exito && mounted) {
+        final usuario = authProvider.usuarioActual;
+        
+        // ¡LA MAGIA DEL ENRUTAMIENTO!
+        if (usuario != null && usuario.primerLogin) {
+          // Si es su primera vez, lo obligamos a cambiar la clave
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const CambioPasswordObligatorioScreen()),
+          );
+        } else {
+          // Si ya la cambió antes, entra directo al sistema
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const MainLayout()),
+          );
+        }
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
